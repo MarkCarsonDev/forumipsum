@@ -1,0 +1,100 @@
+from flask import Flask, jsonify, render_template, request
+import pymongo
+from pymongo import MongoClient
+from datetime import datetime
+from bson.json_util import dumps
+from bson.objectid import ObjectId
+
+app = Flask(__name__)
+
+# Database connection function
+def get_db():
+    client = MongoClient(host='mongodb', 
+                         port=27017,
+                         username='root',
+                         password='pass',
+                         authSource='admin')
+    db = client['posts_db']
+    return db
+
+# Route for displaying the feed
+@app.route('/feed')
+def display_feed():
+    return render_template('feed.html')
+
+# Route for fetching posts
+@app.route('/posts')
+def fetch_posts():
+    db = get_db()
+    _posts = db.posts_tb.find().sort('date', pymongo.DESCENDING)
+    posts = [
+        {
+            "_id": str(post['_id']),
+            "title": post['title'],
+            "content": post['content'],
+            "author": post['author'],
+            "date": post['date'].strftime("%Y-%m-%d %H:%M:%S"),
+            "comments": post['comments']
+        }
+        for post in _posts
+    ]
+    return jsonify({"posts": posts})
+
+# Route for displaying the create post form
+@app.route('/create_post')
+def display_create_post():
+    return render_template('create_post.html')
+
+# Route for creating a new post
+@app.route('/create_post', methods=['POST'])
+def create_post():
+    db = get_db()
+    post_data = request.get_json()
+    
+    new_post = {
+        "title": post_data["title"],
+        "content": post_data["content"],
+        "author": post_data["author"],
+        "date": datetime.utcnow(),
+        "comments": []
+    }
+
+    # Filter content if needed
+
+    db.posts_tb.insert_one(new_post)
+    return jsonify({"message": "Post created successfully"}), 201
+
+# Route for creating a new comment on a post
+@app.route('/posts/<post_id>/comments', methods=['POST'])
+def create_comment(post_id):
+    db = get_db()
+    comment_data = request.get_json()
+
+    new_comment = {
+        "content": comment_data["content"],
+        "author": comment_data["author"],
+        "date": datetime.utcnow()
+    }
+
+    # Filter content if needed
+
+    # Find the parent post and append the new comment
+    result = db.posts_tb.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$push": {"comments": new_comment}}
+    )
+
+    if result.modified_count == 1:
+        return jsonify({"message": "Comment created successfully"}), 201
+    else:
+        return jsonify({"message": "Error creating comment"}), 500
+
+# Route for clearing all posts
+@app.route('/clear_posts', methods=['POST'])
+def clear_posts():
+    db = get_db()
+    db.posts_tb.drop()
+    return jsonify({"message": "Posts cleared successfully"}), 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=6969, debug=True)

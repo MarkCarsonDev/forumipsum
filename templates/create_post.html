@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a post</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div id="nav">
+        <button type="button" id="feed-btn" class="nav-btn" onclick="window.location.href='/feed'">Back to Feed</button>
+    </div>
+
+    <h1>Create a new post</h1>
+    <div>
+        <form id="new-post-form">
+            <input type="text" id="title" name="title" placeholder="Title" required>
+            <br>
+            <textarea id="content" name="content" placeholder="Write something!" required></textarea>
+            <br>
+            <input type="text" id="author" name="author" placeholder="Temp. until auth but: Author" required>
+            <br>
+            <button type="submit">Create Post</button>
+        </form>
+    </div>
+</body>
+
+
+<script>
+    window.onload = function () {
+        document.getElementById('new-post-form').addEventListener('submit', createPost);
+    }
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+
+</html>

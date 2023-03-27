@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posts</title>
+    <link rel="stylesheet" href="/static/styles.css">
+
+</head>
+
+<body onload="fetchPosts()">
+    <div class="square" id="sq1"></div>
+    <div class="square" id="sq2"></div>
+    <div id="nav">
+        <button type="button" id="create-post-btn" class="nav-btn frosted"
+            onclick="window.location.href='/create_post'">Create Post</button>
+        <button type="button" id="clear-posts-btn" class="nav-btn frosted">Drop Posts</button>
+    </div>
+    <h1 id="site-title" class="neon-text">[ FORUM ]</h1>
+    <div id="posts">
+        <div id="filler"></div>
+    </div>
+</body>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</html>
