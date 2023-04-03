@@ -6,21 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Posts</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://kit.fontawesome.com/2d389f24b8.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
 
 </head>
 
 <body onload="fetchPosts()">
-    <div class="square" id="sq1"></div>
-    <div class="square" id="sq2"></div>
-    <div id="nav">
-        <button type="button" id="create-post-btn" class="nav-btn frosted"
-            onclick="window.location.href='/create_post'">Create Post</button>
-        <button type="button" id="clear-posts-btn" class="nav-btn frosted">Drop Posts</button>
+    <div id="page-content" class="frosted">
+        <div id="forum">
+            <div id="nav">
+                <div id="nav-left">
+                    <a href="#" onclick="clearPosts();">Drop</button>
+                        <a>BLANK</a>
+                        <a>BLANK</a>
+                        <a>BLANK</a>
+
+                </div>
+                <div id="nav-right">
+                    <a>blank</a>
+                    <a>blank</a>
+                </div>
+            </div>
+            <div id="menu">
+                <div id="rules">
+                    <h2>Communities</h2>
+                    <ul>
+                        <li>/r/webdev</li>
+                        <li>/r/rustjerk</li>
+                        <li>/r/whatever</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="header">
+                <h3>Welcome, Mark</h3>
+                <h1>FORUM IPSUM</h1>
+            </div>
+            <div id="subheader">
+                <h2>PNUAM LSUAL EAMA ADN</h2>
+            </div>
+            <div id="posts">
+            </div>
+            <img id="local-profile-pic" src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg">
+        </div>
     </div>
-    <h1 id="site-title" class="neon-text">[ FORUM ]</h1>
-    <div id="posts">
-        <div id="filler"></div>
-    </div>
+
 </body>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

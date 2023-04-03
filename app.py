@@ -40,13 +40,8 @@ def fetch_posts():
     ]
     return jsonify({"posts": posts})
 
-# Route for displaying the create post form
-@app.route('/create_post')
-def display_create_post():
-    return render_template('create_post.html')
-
 # Route for creating a new post
-@app.route('/create_post', methods=['POST'])
+@app.route('/posts/', methods=['POST'])
 def create_post():
     db = get_db()
     post_data = request.get_json()
@@ -63,6 +58,18 @@ def create_post():
 
     db.posts_tb.insert_one(new_post)
     return jsonify({"message": "Post created successfully"}), 201
+
+@app.route('/posts/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    db = get_db()
+
+    # Delete the post from the database using post_id
+    result = db.posts_tb.delete_one({"_id": ObjectId(post_id)})
+
+    if result.deleted_count == 1:
+        return jsonify({"message": "Post deleted successfully"}), 200
+    else:
+        return jsonify({"message": "Error deleting post"}), 500
 
 # Route for creating a new comment on a post
 @app.route('/posts/<post_id>/comments', methods=['POST'])

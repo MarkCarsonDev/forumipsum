@@ -2,17 +2,25 @@
 
 /* Variables */
 :root {
+    --nav-bar-color: rgb(37, 39, 39);
+    --frosted-bg-color: rgba(255, 255, 255, 0.1);
+    --white-shadow-color: rgba(250, 250, 255, 0.2);
+    --shadow-color: rgba(0, 0, 0, 0.25);
+    --white-text-color: #f5f5f5;
+    --black-text-color: rgb(69, 69, 70);
+    --black-subtext-color: rgb(96, 97, 98);
+    --white-subtext-color: #e5e5e5;
     --main-font-family: Arial, sans-serif;
-    --neon-font-family: 'Roboto', sans-serif;
+    --roboto-font-family: 'Roboto', sans-serif;
+
+
+
     --main-bg-color: #333056;
-    --text-color: #f5f5f5;
     --meta-text-color: #ddd;
-    /* --frosted-bg-color: rgba(240, 240, 255, 0.2); */
-    --frosted-bg-color: rgba(0, 0, 5, 0.4);
-    --shadow-color: rgba(0, 0, 0, 0.2);
-    --input-bg-color: var(--frosted-bg-color);
-    --submit-btn-color: #4caf50;
-    --submit-btn-hover-color: #45a049;
+    /* --frosted-bg-color: rgba(0, 0, 5, 0.4); */
+    --input-bg-color: rgba(0, 0, 0, 0.4);
+    --submit-btn-color: #ecf0edaa;
+    --submit-btn-hover-color: #45a04988;
     --nav-btn-color: #34495e;
     --nav-btn-hover-color: #2c3e50;
     --clear-posts-btn-color: #7f8c8d;
@@ -31,119 +39,333 @@
 }
 
 body {
-    font-family: var(--main-font-family);
+    font-family: var(--roboto-font-family);
     width: 100vw;
     height: 100vh;
+    margin: 0;
     overflow: hidden;
-    margin: 0 auto;
-    padding: 20px;
     /* background: linear-gradient(-45deg, var(--main-bg-color), rgb(33, 19, 19), rgb(20, 8, 1)); */
     /* background: linear-gradient(-45deg, #a0c1d1, #e0e0e0, #ffffff, #d7e6f2); */
     /* background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fbc2eb, #a6c1ee); */
     /* background: linear-gradient(-45deg, #2E3192, #1BFFFF, #1E90FF, #00a8cc); */
-    background: linear-gradient(-45deg, #2c3e50, #bdc3c7, #34495e, #7f8c8d);
-    
-    backdrop-filter: blur(100vh);
-    background-size: 300% 300%;
+    background: linear-gradient(to top, rgb(36, 37, 40), rgb(68, 71, 71) 50%, rgb(127, 130, 130) 94%, rgb(119, 122, 123) 100%);
+    background-size: 200% 200%;
     animation: gradient 5s ease;
     animation-fill-mode: forwards;
     color: var(--text-color);
 }
 
-@keyframes gradient {
-	0% {
-		background-position: 0%;
-	}
-	100% {
-		background-position: 100%;
-	}
+.hidden, .hidden * {
+    display: none;
 }
 
-@keyframes bob-rotate {
-    0% {
-        transform: translateY(0) rotate(55deg);
-    }
-    50% {
-        transform: translateY(-3vh) rotate(65deg);
-    }
-    100% {
-        transform: translateY(0) rotate(55deg);
-    }
-}
-
-@keyframes bob {
-    0% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-1vh);
-    }
-    100% {
-        transform: translateY(0);
-    }
-}
-
-#site-title {
-    font-size: 5em;
-    text-align: center;
-    left: 50%;
+/* */
+#page-content {
+    position: fixed;
+    width: 97vw;
+    height: 95vh;
     top: 0;
-    z-index: -2;
+    margin: 0 1.5vw 5vh 1.5vw;
+    z-index: 0;
+    border-radius: 0 0 5vmin 5vmin;
+}
+
+/* Forum section */
+#forum {
     position: absolute;
-    animation: bob 15s ease infinite;
-    /* text-shadow: 1px 3px 3px var(--shadow-color); */
-    font-family: var(--neon-font-family);
-    font-weight: 100;
-    color: var(--neon1);
-}
-
-h1 {
-    text-align: center;
-}
-
-.frosted {
-    background: var(--frosted-bg-color);
-    box-shadow: 0 3px 20px var(--shadow-color);
-    backdrop-filter: blur(1em);
-    flex-grow: 4;
-}
-
-.square {
-    aspect-ratio: 1/1;
-    background-color: var(--square-color);
-    position: absolute;
-    width: 20%;
-    z-index: -2;
-    border-radius: 1.5em;
-    box-shadow: 0 3px 20px var(--shadow-color);
-}
-
-#sq1 {
-    top: 20%;
-    left: 10%;
-    transform: rotate(45deg);
-    animation: bob-rotate 15s ease infinite;
-}
-
-#sq2 {
-    top: 60%;
-    left: 23%;
-    animation: bob-rotate 15s ease infinite;
-    animation-delay: -7.5s;
+    display: grid;
+    grid-template-areas:
+        'nav nav nav nav'
+        'menu header profile-info profile-pic'
+        'menu subheader search search'
+        'menu posts posts posts';
+    grid-template-columns: 15% 50% 20% 15%;
+    grid-template-rows: 10% 14% 10% 66%;
+    gap: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    box-shadow: 0 0vw 1vw 0.5vw var(--shadow-color);
+    overflow: scroll;
+    scrollbar-width: none;
 }
 
 /* Nav section */
 #nav {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 7vh;
-    z-index: 1;
-    background: transparent;
+    height: 10%;
+    z-index: 3;
+    margin: 0;
+    background: var(--nav-bar-color);
+    /* box-shadow: 0 -0.5vw 0.3vw 0.3vw var(--white-shadow-color); */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    grid-area: nav;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-/* Create a new post section */
+#nav::before {
+    position: absolute;
+    width: 1.5vw;
+    left: -1.5vw;
+    top: 100%;
+    box-shadow: 0 0px 1px 0.5px white;
+    content: '';
+    z-index: -1;
+}
+
+#nav-left {
+    justify-content: space-around;
+}
+
+#nav-right {
+    justify-content: space-around;
+}
+
+#nav a {
+    letter-spacing: 0.2em;
+    padding: 2em;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--white-text-color);
+    text-transform: uppercase;
+
+    font-size: 0.9em;
+    font-weight: 400;
+    font-family: var(--roboto-font-family);
+}
+
+/* Left menu */
+#menu {
+    grid-area: menu;
+}
+
+#rules::after {
+    height: 20%;
+    background-color: var(--nav-bar-color);
+    width: 100%;
+    position: absolute;
+    top: -20%;
+    z-index: -2;
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    content: "Hello there!";
+    color: white;
+
+}
+
+/* Rules */
+#rules {
+    position: absolute;
+    width: 15%;
+    height: 100%;
+    border-radius: 0 0 0.6vmin 0.6vmin;
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, var(--nav-bar-color) 10%, rgba(54, 53, 53, 0.8));
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.55); 
+    z-index: 2;
+}
+
+#rules h2,
+#rules li {
+    color: var(--white-text-color);
+    font-size: 1em;
+    list-style: none;
+    font-weight: 300;
+}
+
+#rules h2 {
+    text-align: center;
+    text-transform: uppercase;
+}
+
+#rules ul {
+    text-align: left;
+    padding: 0;
+}
+
+#rules li {
+    text-align: left;
+    padding: 3%;
+    margin: 3% 5%;
+    background-image: linear-gradient(rgba(33, 33, 33, 0.8), rgba(19, 19, 19, 0.8));
+    border: var(--black-subtext-color) 1px solid;
+    border-radius: 0.5em;
+    cursor: pointer;
+}
+
+/* Content */
+/* Header section */
+#header {
+    grid-area: header;
+    margin-left: 1%;
+}
+
+#header h1 {
+    letter-spacing: 0.15em;
+    margin: 0;
+    font-size: 4em;
+    z-index: 1;
+    font-weight: 500;
+    color: var(--white-text-color);
+    font-family: var(--roboto-font-family);
+    white-space: nowrap;
+}
+
+#header h3 {
+    padding-top: 3%;
+    margin: 0;
+    font-size: 0.8em;
+    z-index: 1;
+    font-weight: 500;
+    color: var(--white-subtext-color);
+    font-family: var(--roboto-font-family);
+}
+
+/* Profile info section */
+#local-profile-pic {
+    grid-area: profile-pic;
+    margin-left: 1%;
+    width: 24%;
+    align-self: center;
+    justify-self: center;
+    border: white solid 3px;
+    border-radius: 100%;
+}
+
+/* Suheader section */
+#subheader {
+    grid-area: subheader;
+    margin-left: 1%;
+}
+
+#subheader h2 {
+    letter-spacing: 0.1em;
+    margin: 0;
+    font-size: 2em;
+    z-index: 1;
+    font-weight: 300;
+    color: var(--white-subtext-color);
+    font-family: var(--roboto-font-family);
+}
+
+/* Posts section */
+#posts {
+    grid-area: posts;
+    width: 100%;
+    margin: 0 auto;
+}
+
+#posts-footer {
+    position: absolute;
+    bottom: 0;
+}
+
+#posts-footer p {
+    color: var(--white-subtext-color);
+    font-size: 0.8em;
+    z-index: 5;
+    text-align: center;
+    font-weight: 400;
+}
+
+.post {
+    width: calc(95% / 3 - 16px);
+    box-sizing: border-box;
+    border-radius: 1em;
+    display: flex;
+    flex-direction: column;
+    margin: 0 1% 7% 1%;
+    min-height: 25%;
+    max-height: 50%;
+    overflow: scroll;
+}
+ 
+.main-post {
+    border-radius: 1.5em 1.5em 0 0em;
+    padding: 1em 1em 0 1em;
+    scrollbar-width: none;
+}
+
+    .trashcan-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.2em;
+        color: #ccc;
+        cursor: pointer;
+    }
+
+    .trashcan-icon:hover {
+        color: #999;
+    }
+
+.comments-section {
+    margin-left: 5%;
+    width: 90%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.comment-field {
+    float: bottom;
+}
+
+.submission {
+    display: none;
+}
+
+.author-field {
+    width: 40%;
+    height: 10%;
+}
+
+.post-title {
+    font-family: var(--roboto-font-family);
+    font-weight: 500;
+    color: var(--white-text-color);
+    margin: 0;
+}
+
+.post-content {
+    position: relative;
+    overflow: hidden;
+    font-weight: 400;
+    color: var(--white-subtext-color);
+}
+
+.post-meta {
+    font-size: 0.8em;
+    color: var(--meta-text-color);
+    margin: 0 0 0.5em 0;
+    width: 90%;
+}
+
+.post ul {
+    padding: 0;
+    list-style-type: none;
+}
+
+.comment {
+    background-color: var(--input-bg-color);
+    border-radius: 1.5em;
+    padding: 0.5em;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.comment-meta {
+    font-size: 0.8em;
+    color: var(--meta-text-color);
+    margin-bottom: 5px;
+}
+
+/* New Post */
+
 form#new-post-form {
     border-radius: 1.5em;
     padding: 1.25em;
@@ -160,17 +382,15 @@ form.comment-form textarea {
     width: calc(100% - 1em);
     padding: 0.3em 0.5em;
     border: 0.2em;
-    border-radius: 0.5em;
-    background-color: var(--frosted-bg-color);
-    color: var(--text-color);
+    border-radius: 0.2em;
+    background-color: var(--input-bg-color);
+    color: var(--white-text-color);
     margin-bottom: 0.5em;
     font-family: var(--main-font-family);
 }
 
-form#new-post-form button[type="submit"],
+form#new-post-form button[type="submit"], 
 form.comment-form button[type="submit"] {
-    background-color: var(--submit-btn-color);
-    border: none;
     padding: 10px 20px;
     text-align: center;
     text-decoration: none;
@@ -178,15 +398,94 @@ form.comment-form button[type="submit"] {
     font-size: 16px;
     margin: 4px 2px;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 0.5em;
+    background-color: var(--submit-btn-color);
 }
 
 form#new-post-form button[type="submit"]:hover,
 form.comment-form button[type="submit"]:hover {
     background-color: var(--submit-btn-hover-color);
+    color: var(--white-text-color)
 }
 
-/* Post styles */
+form#new-post-form button[type="submit"]:hover .plus-icon,
+form.comment-form button[type="submit"]:hover .plus-icon {
+    color: var(--white-text-color)
+}
+
+#new-title,
+#new-title::-webkit-input-placeholder {
+    font-size: 1.3em;
+    line-height: 2;
+}
+
+.plus-icon {
+    font-size: 1.2em;
+    color: var(--black-text-color);
+    cursor: pointer;
+}
+
+/* Animations section */
+
+@keyframes gradient {
+    0% {
+        background-position: 0%;
+    }
+
+    100% {
+        background-position: 100%;
+    }
+}
+
+@keyframes bob-rotate {
+    0% {
+        transform: translateY(0) rotate(55deg);
+    }
+
+    50% {
+        transform: translateY(-3vh) rotate(65deg);
+    }
+
+    100% {
+        transform: translateY(0) rotate(55deg);
+    }
+}
+
+@keyframes bob {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-1vh);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.frosted {
+    background-image: linear-gradient(135deg, var(--frosted-bg-color), rgba(255, 255, 255, 0));
+    box-shadow: 0 3px 20px var(--shadow-color);
+    backdrop-filter: blur(1em);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* #sq1 {
+    top: 20%;
+    left: 10%;
+    transform: rotate(45deg);
+    animation: bob-rotate 15s ease infinite;
+}
+
+#sq2 {
+    top: 60%;
+    left: 23%;
+    animation: bob-rotate 15s ease infinite;
+    animation-delay: -7.5s;
+}
+
 
 #posts {
     padding: 0 20vw 0 20vw;
@@ -207,7 +506,7 @@ form.comment-form button[type="submit"]:hover {
     padding: 0em 1em 0 1em;
     margin-bottom: 3vh;
 }
-  
+
 .post::before {
     content: "";
     position: absolute;
@@ -283,9 +582,9 @@ form.comment-form button[type="submit"]:hover {
     left: 0;
     right: 0;
     border-radius: 0 0 2em 0;
-    height: 30vh; /* Adjust this value to control the height of the fade-out area */
+    height: 30vh;
     background-image: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 10%, rgba(255, 255, 255, 0.3) 25%, rgba(255, 255, 255, 0) 100%);
-    pointer-events: none; /* Ensure this pseudo-element does not interfere with interactions */
+    pointer-events: none;
 }
 
 .post-meta {
@@ -299,7 +598,6 @@ form.comment-form button[type="submit"]:hover {
     list-style-type: none;
 }
 
-/* Comment styles */
 .comment {
     position: relative;
     background-color: var(--input-bg-color);
@@ -314,7 +612,6 @@ form.comment-form button[type="submit"]:hover {
     margin-bottom: 5px;
 }
 
-/* Nav buttons */
 .nav-btn {
     border: 2px whitesmoke solid;
     color: var(--text-color);
@@ -328,11 +625,13 @@ form.comment-form button[type="submit"]:hover {
     border-radius: 4px;
 }
 
-#create-post-btn, #feed-btn {
+#create-post-btn,
+#feed-btn {
     background: var(--nav-btn-color);
 }
 
-#create-post-btn:hover, #feed-btn:hover {
+#create-post-btn:hover,
+#feed-btn:hover {
     background: var(--nav-btn-hover-color);
 }
 
@@ -350,13 +649,13 @@ button#clear-posts-btn:hover {
 
 .neon-text {
     text-shadow:
-    .1vw 0vw 0.25vw var(--neon1), .2vw 0vw 0.25vw var(--neon1), .4vw 0vw 0.25vw var(--neon1), 
+        .1vw 0vw 0.25vw var(--neon1), .2vw 0vw 0.25vw var(--neon1), .4vw 0vw 0.25vw var(--neon1),
 
-    .1vw 0vw 0vw var(--neon2), .2vw 0vw 0vw var(--neon2), .4vw 0vw 0vw var(--neon2),
-    .1vw 0vw .1vw var(--neon2), .2vw 0vw .1vw var(--neon2), .4vw 0vw .1vw var(--neon2),
-    .1vw 0vw 2vw var(--neon2), .2vw 0vw .2vw var(--neon2), .4vw 0vw .2vw var(--neon2),
+        .1vw 0vw 0vw var(--neon2), .2vw 0vw 0vw var(--neon2), .4vw 0vw 0vw var(--neon2),
+        .1vw 0vw .1vw var(--neon2), .2vw 0vw .1vw var(--neon2), .4vw 0vw .1vw var(--neon2),
+        .1vw 0vw 2vw var(--neon2), .2vw 0vw .2vw var(--neon2), .4vw 0vw .2vw var(--neon2),
 
-    0.1vw 0vw 1vw var(--neon3), .2vw 0vw 1vw var(--neon3), .4vw 0vw 1vw var(--neon3),
-    0.1vw 0vw 5vw var(--neon3), .2vw 0vw 20vw var(--neon3), .4vw 0vw 10vw var(--neon3),
-    0.1vw 0vw 10vw var(--neon3), .2vw 0vw 30vw var(--neon3), .4vw 0vw 10vw var(--neon3);
-}
+        0.1vw 0vw 1vw var(--neon3), .2vw 0vw 1vw var(--neon3), .4vw 0vw 1vw var(--neon3),
+        0.1vw 0vw 5vw var(--neon3), .2vw 0vw 20vw var(--neon3), .4vw 0vw 10vw var(--neon3),
+        0.1vw 0vw 10vw var(--neon3), .2vw 0vw 30vw var(--neon3), .4vw 0vw 10vw var(--neon3);
+} */

@@ -13,32 +13,66 @@ async function clearPosts() {
     }
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    // var elem = document.querySelector("#posts");
+    // var msnry = new Masonry(elem, {
+    //     // options
+    //     itemSelector: ".post",
+    //     columnWidth: ".post",
+    //     percentPosition: true,
+    //     gutter: parseInt(window.getComputedStyle(elem).getPropertyValue("gap")),
+    // });
+});
+
+function initMasonry() {
+    var elem = document.querySelector("#posts");
+    var msnry = new Masonry(elem, {
+        // options
+        itemSelector: ".post",
+        columnWidth: ".post",
+        percentPosition: true,
+        gutter: 16,
+    });
+}
 
 async function dropPosts() {
     db = db.getSiblingDB("posts_db");
     db.posts_tb.drop();
 }
 
-function toggleComments(event) {
-    const postId = event.target.dataset.postId;
-    const commentsElement = document.querySelector(`#comments-${postId}`);
-    commentsElement.classList.toggle('hidden');
-}
-
-function toggleNestedComments(event) {
-    const commentId = event.target.dataset.commentId;
-    const nestedCommentsElement = document.querySelector(`#nested-comments-${commentId}`);
-    nestedCommentsElement.classList.toggle('hidden');
-}
-
 async function fetchPosts() {
-    document.getElementById('clear-posts-btn').addEventListener('click', clearPosts);
     const response = await fetch('/posts');
     const data = await response.json();
     const postsElement = document.getElementById('posts');
-    postsElement.innerHTML = "";
+    postsElement.innerHTML = `
+    <div id="posts-footer">
+        <p>You've reached the bottom!</p>
+    </div> `;
 
     data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // TODO: Check if user is logged in
+    if (true) {
+        postsElement.innerHTML = postsElement.innerHTML + `<div class="post frosted">
+        <form id="new-post-form">
+                <input type="text" id="new-author" name="author" placeholder="Author" required>
+                    <br>
+                <input type="text" id="new-title" name="title" placeholder="Title" required>
+                    <br>
+                <textarea id="new-content" name="content" placeholder="Write something!" required></textarea>
+                    <br>
+                <button class="frosted" type="submit"> 
+                    <i class="fas fa-plus plus-icon"></i>
+                </button>
+            </form>
+        </div>`;
+
+
+        const postForm = document.getElementById('new-post-form');
+        postForm.addEventListener('submit', createPost);
+    }
+
+
 
     data.posts.forEach(post => {
         const postElement = document.createElement('div');
@@ -48,14 +82,15 @@ async function fetchPosts() {
             <p class="post-meta">By ${post.author} on ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
+            <i class="fas fa-trash-alt trashcan-icon"></i>
         </div>
-        <div class="comments-section">
+        <div class="comments-section hidden">
             <div class="comments">
                 <ul>
                     ${post.comments.map(comment => `
                         <li>
                             <div class="comment">
-                                <p class="comment-meta">By ${comment.author} on ${comment.date}</p>
+                                <!--<p class="comment-meta">By ${comment.author} on ${comment.date}</p>-->
                                 <p>${comment.content}</p>
                             </div>
                         </li>
@@ -80,6 +115,10 @@ async function fetchPosts() {
         commentForm.dataset.postId = post._id;
         commentForm.addEventListener('submit', createComment);
 
+        const trashcanIcon = postElement.querySelector('.trashcan-icon');
+        trashcanIcon.dataset.postId = post._id;
+        trashcanIcon.addEventListener('click', deletePost);
+
         // Get all textarea elements with class 'comment-field'
         const commentFields = document.querySelectorAll('.comment-field');
 
@@ -102,16 +141,18 @@ async function fetchPosts() {
             });
         });
     });
+
+    initMasonry();
 }
 
 async function createPost(event) {
     event.preventDefault();
 
-    const title = document.getElementById('title').value;
-    const content = document.getElementById('content').value;
-    const author = document.getElementById('author').value;
+    const title = document.getElementById('new-title').value;
+    const content = document.getElementById('new-content').value;
+    const author = document.getElementById('new-author').value;
 
-    const response = await fetch('/create_post', {
+    const response = await fetch('/posts', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -120,10 +161,22 @@ async function createPost(event) {
     });
 
     if (response.ok) {
-        document.getElementById('new-post-form').reset();
-        window.location.href = '/feed';
+        fetchPosts(); // Reload the posts
     } else {
         alert('Error creating post');
+    }
+}
+
+async function deletePost(event) {
+    const postId = event.target.dataset.postId;
+    const response = await fetch(`/posts/${postId}`, {
+        method: 'DELETE'
+    });
+
+    if (response.ok) {
+        fetchPosts(); // Reload the posts
+    } else {
+        alert('Error deleting post');
     }
 }
 
