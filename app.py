@@ -54,7 +54,9 @@ def create_post():
         "comments": []
     }
 
-    # Filter content if needed
+    # filtering
+    if ("badword" in new_post["title"].lower() or "badword" in new_post["content"].lower()):
+        return jsonify({"message": "Failed content filter"}), 400
 
     db.posts_tb.insert_one(new_post)
     return jsonify({"message": "Post created successfully"}), 201

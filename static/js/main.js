@@ -53,7 +53,7 @@ async function fetchPosts() {
 
     // TODO: Check if user is logged in
     if (true) {
-        postsElement.innerHTML = postsElement.innerHTML + `<div class="post frosted">
+        postsElement.innerHTML = postsElement.innerHTML + `<div class="post" id="new-post">
         <form id="new-post-form">
                 <input type="text" id="new-author" name="author" placeholder="Author" required>
                     <br>
@@ -79,10 +79,10 @@ async function fetchPosts() {
         postElement.className = 'post frosted';
         postElement.innerHTML = `
         <div class="main-post">
+            <i class="fas fa-trash-alt trashcan-icon"></i>
             <p class="post-meta">By ${post.author} on ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
-            <i class="fas fa-trash-alt trashcan-icon"></i>
         </div>
         <div class="comments-section hidden">
             <div class="comments">
@@ -162,8 +162,10 @@ async function createPost(event) {
 
     if (response.ok) {
         fetchPosts(); // Reload the posts
+    } else if (response.status == 400) {
+        alert('Your post contains profanity. Please remove it and try again.');
     } else {
-        alert('Error creating post');
+        alert('Error creating post: ' + response.message);
     }
 }
 
