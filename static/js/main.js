@@ -78,19 +78,70 @@ async function fetchPosts() {
         const postElement = document.createElement('div');
         postElement.className = 'post frosted';
         postElement.innerHTML = `
+
+        <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
-            <i class="fas fa-trash-alt trashcan-icon"></i>
             <p class="post-meta">By ${post.author} on ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
         </div>
-        <div class="comments-section hidden">
+        <i class="fas fa-comment-alt comments-icon"> ${post.comments.length}</i>
+        `;
+        postsElement.appendChild(postElement);
+
+        postElement.addEventListener('click', (event) => {
+            // Check if the event target is not a trashcan icon or any form element
+            if (
+                !event.target.matches('.trashcan-icon, form, form *') &&
+                !event.target.closest('.comments-section')
+            ) {
+                window.location.href = `/p/${post._id}`;
+            }
+        });
+
+
+        const trashcanIcon = postElement.querySelector('.trashcan-icon');
+        trashcanIcon.dataset.postId = post._id;
+        trashcanIcon.addEventListener('click', deletePost);
+    });
+
+    initMasonry();
+}
+
+async function fetchPost() {
+    const response = await fetch('/posts/' + window.location.pathname.split('/')[2]);
+    console.log(response)
+    console.log(window.location.pathname.split('/')[2])
+
+    if (!response.ok) {
+        // Handle the case when the post is not found
+        if (response.status === 404) {
+            alert('Post not found');
+        } else {
+            alert('Error fetching post');
+        }
+        return;
+    }
+
+    const post = await response.json();
+    const postElement = document.getElementById('post');
+
+    postElement.className = 'post frosted';
+    postElement.innerHTML = `
+
+        <i class="fas fa-trash-alt trashcan-icon"></i>
+        <div class="main-post">
+            <p class="post-meta">By ${post.author} on ${post.date}</p>
+            <h2 class="post-title">${post.title}</h2>
+            <p class="post-content">${post.content}</p>
+        </div>
+        <div class="comments-section">
             <div class="comments">
                 <ul>
                     ${post.comments.map(comment => `
                         <li>
                             <div class="comment">
-                                <!--<p class="comment-meta">By ${comment.author} on ${comment.date}</p>-->
+                                <p class="comment-meta">By ${comment.author} on ${comment.date}</p>
                                 <p>${comment.content}</p>
                             </div>
                         </li>
@@ -100,49 +151,23 @@ async function fetchPosts() {
             <div>
                 <form class="comment-form" id="comment-form-${post._id}">
                     <textarea rows="1" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
+                    <input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>
                     <br>
                     <div class="submission">
-                        <input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>
                         <button type="submit">Add Comment</button>
                     </div>
                 </form>
             </div>
         </div>
         `;
-        postsElement.appendChild(postElement);
 
-        const commentForm = postElement.querySelector(`#comment-form-${post._id}`);
-        commentForm.dataset.postId = post._id;
-        commentForm.addEventListener('submit', createComment);
+    const commentForm = postElement.querySelector(`#comment-form-${post._id}`);
+    commentForm.dataset.postId = post._id;
+    commentForm.addEventListener('submit', createComment);
 
-        const trashcanIcon = postElement.querySelector('.trashcan-icon');
-        trashcanIcon.dataset.postId = post._id;
-        trashcanIcon.addEventListener('click', deletePost);
-
-        // Get all textarea elements with class 'comment-field'
-        const commentFields = document.querySelectorAll('.comment-field');
-
-        // Iterate over each textarea and add event listeners
-        commentFields.forEach((field) => {
-            // Show the submission div when the textarea is focused
-            field.addEventListener('focus', (event) => {
-                const submissionDiv = event.target.parentElement.querySelector('.submission');
-                submissionDiv.style.display = 'block';
-                
-            });
-
-            // Hide the submission div when the textarea loses focus and is empty
-            // TODO: Doesn't work when switching to author field
-            field.addEventListener('blur', (event) => {
-                const submissionDiv = event.target.parentElement.querySelector('.submission');
-                if (event.target.value.trim() === '') {
-                    submissionDiv.style.display = 'none';
-                }
-            });
-        });
-    });
-
-    initMasonry();
+    const trashcanIcon = postElement.querySelector('.trashcan-icon');
+    trashcanIcon.dataset.postId = post._id;
+    trashcanIcon.addEventListener('click', deletePost);
 }
 
 async function createPost(event) {
@@ -200,7 +225,7 @@ async function createComment(event) {
 
     if (response.ok) {
         form.reset();
-        fetchPosts(); // Reload the posts
+        fetchPost(); // Reload the post
     } else {
         alert('Error creating comment');
     }

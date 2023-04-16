@@ -17,6 +17,13 @@ def get_db():
     db = client['posts_db']
     return db
 
+
+@app.route('/posts_dump')
+def posts_dump():
+    db = get_db()
+    posts = db.posts_tb.find()
+    return jsonify({"post_dump": dumps(posts)})
+
 # Route for displaying the feed
 @app.route('/feed')
 def display_feed():
@@ -39,6 +46,39 @@ def fetch_posts():
         for post in _posts
     ]
     return jsonify({"posts": posts})
+
+
+# Route for displaying the feed
+@app.route('/p/<post_id>')
+def display_post(post_id):
+    return render_template('post.html')
+
+@app.route('/posts/<post_id>')
+def fetch_post(post_id):
+    db = get_db()
+
+    # Find the post with the given id
+    post_object_id = ObjectId(post_id)
+    
+    post = db.posts_tb.find_one({"_id": ObjectId(post_object_id)})
+
+    # Check if the post was found
+    if post:
+        # Convert ObjectId fields to strings
+        post["_id"] = str(post["_id"])
+        # Uncomment when authentication is implemented
+        #post["author"]["userId"] = str(post["author"]["userId"])
+        #for comment in post["comments"]:
+            #comment["_id"] = str(comment["_id"])
+            # Uncomment when authentication is implemented
+            # comment["author"]["userId"] = str(comment["author"]["userId"])
+            # Do the same for nested comments if needed
+
+        # Return the JSON response
+        return jsonify(post)
+    else:
+        # Return a 404 not found status if the post is not found
+        return jsonify({"error": "Post not found"}), 404
 
 # Route for creating a new post
 @app.route('/posts/', methods=['POST'])
