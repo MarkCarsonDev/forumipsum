@@ -110,15 +110,14 @@ async function fetchPosts() {
 
 async function fetchPost() {
     const response = await fetch('/posts/' + window.location.pathname.split('/')[2]);
-    console.log(response)
-    console.log(window.location.pathname.split('/')[2])
 
     if (!response.ok) {
         // Handle the case when the post is not found
         if (response.status === 404) {
             alert('Post not found');
         } else {
-            alert('Error fetching post');
+            alert('Error viewing post... Returning to feed!');
+            window.location.href = `/feed`;
         }
         return;
     }
@@ -126,11 +125,11 @@ async function fetchPost() {
     const post = await response.json();
     const postElement = document.getElementById('post');
 
-    postElement.className = 'post frosted';
+    postElement.className = 'post';
     postElement.innerHTML = `
 
         <i class="fas fa-trash-alt trashcan-icon"></i>
-        <div class="main-post">
+        <div class="main-post frosted">
             <p class="post-meta">By ${post.author} on ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
@@ -150,11 +149,13 @@ async function fetchPost() {
             </div>
             <div>
                 <form class="comment-form" id="comment-form-${post._id}">
-                    <textarea rows="1" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
                     <input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>
+                    <textarea rows="2" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
                     <br>
                     <div class="submission">
-                        <button type="submit">Add Comment</button>
+                        <button type="submit">
+                        <i class="fas fa-comment-alt comments-icon"></i>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -164,10 +165,6 @@ async function fetchPost() {
     const commentForm = postElement.querySelector(`#comment-form-${post._id}`);
     commentForm.dataset.postId = post._id;
     commentForm.addEventListener('submit', createComment);
-
-    const trashcanIcon = postElement.querySelector('.trashcan-icon');
-    trashcanIcon.dataset.postId = post._id;
-    trashcanIcon.addEventListener('click', deletePost);
 }
 
 async function createPost(event) {

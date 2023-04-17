@@ -125,7 +125,10 @@ def create_comment(post_id):
         "date": datetime.utcnow()
     }
 
-    # Filter content if needed
+    # filtering
+    if ("badword" in new_comment["content"].lower()):
+        return jsonify({"message": "Failed content filter"}), 400
+    # call the model with the GPT sample text + banned content
 
     # Find the parent post and append the new comment
     result = db.posts_tb.update_one(
