@@ -35,6 +35,50 @@ function initMasonry() {
     });
 }
 
+// Register
+async function registerUser() {
+    const username = document.querySelector('#register-username').value;
+    const password = document.querySelector('#register-password').value;
+
+    const response = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }),
+    });
+
+    if (response.ok) {
+        window.location.reload();
+    } else {
+        const error = await response.json();
+        console.error(error);
+    }
+}
+
+// Login
+async function loginUser() {
+    const username = document.querySelector('#login-username').value;
+    const password = document.querySelector('#login-password').value;
+
+    const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }),
+    });
+
+    if (response.ok) {
+        window.location.reload();
+    } else {
+        const error = await response.json();
+        console.error(error);
+    }
+}
+
+// Logout
+async function logoutUser() {
+    await fetch('/logout', { method: 'GET' });
+    window.location.reload();
+}
+
 async function dropPosts() {
     db = db.getSiblingDB("posts_db");
     db.posts_tb.drop();
@@ -44,6 +88,9 @@ async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
     const postsElement = document.getElementById('posts');
+
+
+
     postsElement.innerHTML = `
     <div id="posts-footer">
         <p>You've reached the bottom!</p>
@@ -51,59 +98,68 @@ async function fetchPosts() {
 
     data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // TODO: Check if user is logged in
-    if (true) {
-        postsElement.innerHTML = postsElement.innerHTML + `<div class="post" id="new-post">
-        <form id="new-post-form">
-                <input type="text" id="new-author" name="author" placeholder="Author" required>
-                    <br>
-                <input type="text" id="new-title" name="title" placeholder="Title" required>
-                    <br>
-                <textarea id="new-content" name="content" placeholder="Write something!" required></textarea>
-                    <br>
-                <button class="frosted" type="submit"> 
-                    <i class="fas fa-plus plus-icon"></i>
-                </button>
-            </form>
-        </div>`;
+    getSessionInfo().then(session => {
+        if (session.username) {
+            console.log("im in >:)")
+            postsElement.innerHTML = postsElement.innerHTML + `<div class="post" id="new-post">
+            <form id="new-post-form">
+                    <input type="text" id="new-title" name="title" placeholder="Title" required>
+                        <br>
+                    <textarea id="new-content" name="content" placeholder="Write something!" required></textarea>
+                        <br>
+                    <button class="frosted" type="submit"> 
+                        <i class="fas fa-plus plus-icon"></i>
+                    </button>
+                </form>
+            </div>`;
+
+            const postForm = document.getElementById('new-post-form');
+            postForm.addEventListener('submit', createPost);
+
+            const logoutButton = document.getElementById('logout-button');
+            logoutButton.classList.remove('hidden');
+            logoutButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                logoutUser();
+            });
+        } else {
+            const loginButton = document.getElementById('login-button');
+            loginButton.classList.remove('hidden');
+        }
+
+        data.posts.forEach(post => {
+            getUserInfo(post.author).then(author => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post frosted';
+                postElement.innerHTML = `
+                    <i class="fas fa-trash-alt trashcan-icon"></i>
+                    <div class="main-post">
+                        <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+                        <h2 class="post-title">${post.title}</h2>
+                        <p class="post-content">${post.content}</p>
+                    </div>
+                    <i class="fas fa-comment-alt comments-icon"> ${post.comments.length}</i>
+                    `;
+                postsElement.appendChild(postElement);
+
+                postElement.addEventListener('click', (event) => {
+                    // Check if the event target is not a trashcan icon or any form element
+                    if (
+                        !event.target.matches('.trashcan-icon, form, form *') &&
+                        !event.target.closest('.comments-section')
+                    ) {
+                        window.location.href = `/p/${post._id}`;
+                    }
+                });
 
 
-        const postForm = document.getElementById('new-post-form');
-        postForm.addEventListener('submit', createPost);
-    }
-
-
-
-    data.posts.forEach(post => {
-        const postElement = document.createElement('div');
-        postElement.className = 'post frosted';
-        postElement.innerHTML = `
-
-        <i class="fas fa-trash-alt trashcan-icon"></i>
-        <div class="main-post">
-            <p class="post-meta">By ${post.author} on ${post.date}</p>
-            <h2 class="post-title">${post.title}</h2>
-            <p class="post-content">${post.content}</p>
-        </div>
-        <i class="fas fa-comment-alt comments-icon"> ${post.comments.length}</i>
-        `;
-        postsElement.appendChild(postElement);
-
-        postElement.addEventListener('click', (event) => {
-            // Check if the event target is not a trashcan icon or any form element
-            if (
-                !event.target.matches('.trashcan-icon, form, form *') &&
-                !event.target.closest('.comments-section')
-            ) {
-                window.location.href = `/p/${post._id}`;
-            }
+                const trashcanIcon = postElement.querySelector('.trashcan-icon');
+                trashcanIcon.dataset.postId = post._id;
+                trashcanIcon.addEventListener('click', deletePost);
+            });
         });
-
-
-        const trashcanIcon = postElement.querySelector('.trashcan-icon');
-        trashcanIcon.dataset.postId = post._id;
-        trashcanIcon.addEventListener('click', deletePost);
     });
+
 
     initMasonry();
 }
@@ -149,7 +205,7 @@ async function fetchPost() {
             </div>
             <div>
                 <form class="comment-form" id="comment-form-${post._id}">
-                    <input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>
+                    <!--<input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>-->
                     <textarea rows="2" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
                     <br>
                     <div class="submission">
@@ -172,14 +228,13 @@ async function createPost(event) {
 
     const title = document.getElementById('new-title').value;
     const content = document.getElementById('new-content').value;
-    const author = document.getElementById('new-author').value;
 
     const response = await fetch('/posts', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ title, content, author })
+        body: JSON.stringify({ title, content })
     });
 
     if (response.ok) {
@@ -225,5 +280,65 @@ async function createComment(event) {
         fetchPost(); // Reload the post
     } else {
         alert('Error creating comment');
+    }
+}
+
+// Event listeners
+document.querySelector('#register-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    registerUser();
+});
+
+document.querySelector('#login-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    loginUser();
+});
+
+document.querySelector('#logout-button').addEventListener('click', (event) => {
+    event.preventDefault();
+    logoutUser();
+});
+
+async function getSessionInfo() {
+    const response = await fetch('/session_info', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+        const userInfo = await response.json();
+        return userInfo;
+    } else {
+        const error = await response.json();
+        throw new Error(error.error);
+    }
+}
+
+
+async function getUserInfo(user_id) {
+    const response = await fetch(`/user_info/${user_id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+
+    });
+
+    if (response.ok) {
+        const userInfo = await response.json();
+        return userInfo;
+    } else {
+        const error = await response.json();
+        throw new Error(error.error);
+    }
+}
+
+async function logoutUser() {
+    const response = await fetch('/logout', {
+        method: 'GET',
+    });
+
+    if (response.ok) {
+        window.location.reload(); // Reload the page or redirect to a different page if needed
+    } else {
+        console.error("Failed to log out");
     }
 }

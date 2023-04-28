@@ -413,7 +413,7 @@ body {
     color: var(--white-subtext-color);
 }
 
-.post-meta {
+.post-meta, .author-url {
     font-size: 0.8em;
     color: var(--meta-text-color);
     margin: 0 0 0.5em 0;

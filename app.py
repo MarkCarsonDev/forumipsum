@@ -1,11 +1,26 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for
 import pymongo
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson.json_util import dumps
 from bson.objectid import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Database connection function
 def get_db():
@@ -17,12 +32,60 @@ def get_db():
     db = client['posts_db']
     return db
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        db = get_db()
+        users = db.users_tb
+        username = request.form.get('username')
+        password = request.form.get('password')
+        hashed_password = generate_password_hash(password)
+
+        if users.find_one({"username": username}):
+            return jsonify({"error": "Username already exists"}), 400
+
+        user_id = users.insert_one({"username": username, "password": hashed_password}).inserted_id
+        session['user_id'] = str(user_id)
+        return redirect(url_for('display_feed'))
+
+    return render_template('auth.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        db = get_db()
+        users = db.users_tb
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = users.find_one({"username": username})
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = str(user['_id'])
+            return redirect(url_for('display_feed'))
+        elif not user:
+            return jsonify({"error": "Invalid username"}), 401
+        else:
+            return jsonify({"error": "Invalid password (or wrong username, oops!)"}), 401
+
+    return render_template('auth.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('display_feed'))
 
 @app.route('/posts_dump')
 def posts_dump():
     db = get_db()
     posts = db.posts_tb.find()
     return jsonify({"post_dump": dumps(posts)})
+
+@app.route('/users_dump')
+def users_dump():
+    db = get_db()
+    users = db.users_tb.find()
+    return jsonify({"users_dump": dumps(users)})
 
 # Route for displaying the feed
 @app.route('/feed')
@@ -39,7 +102,7 @@ def fetch_posts():
             "_id": str(post['_id']),
             "title": post['title'],
             "content": post['content'],
-            "author": post['author'],
+            "author": str(post['author']),
             "date": post['date'].strftime("%Y-%m-%d %H:%M:%S"),
             "comments": post['comments']
         }
@@ -52,6 +115,11 @@ def fetch_posts():
 @app.route('/p/<post_id>')
 def display_post(post_id):
     return render_template('post.html')
+
+# Route for displaying the feed
+@app.route('/u/<user_id>')
+def display_user(user_id):
+    return render_template('user.html')
 
 @app.route('/posts/<post_id>')
 def fetch_post(post_id):
@@ -82,14 +150,23 @@ def fetch_post(post_id):
 
 # Route for creating a new post
 @app.route('/posts/', methods=['POST'])
+@login_required
 def create_post():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
     db = get_db()
+    users = db.users_tb
+    user = users.find_one({"_id": ObjectId(session['user_id'])})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
     post_data = request.get_json()
     
     new_post = {
         "title": post_data["title"],
         "content": post_data["content"],
-        "author": post_data["author"],
+        "author": ObjectId(session['user_id']),
         "date": datetime.utcnow(),
         "comments": []
     }
@@ -115,13 +192,22 @@ def delete_post(post_id):
 
 # Route for creating a new comment on a post
 @app.route('/posts/<post_id>/comments', methods=['POST'])
+@login_required
 def create_comment(post_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
     db = get_db()
+    users = db.users_tb
+    user = users.find_one({"_id": ObjectId(session['user_id'])})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
     comment_data = request.get_json()
 
     new_comment = {
         "content": comment_data["content"],
-        "author": comment_data["author"],
+        "author": ObjectId(session['user_id']),
         "date": datetime.utcnow()
     }
 
@@ -148,5 +234,40 @@ def clear_posts():
     db.posts_tb.drop()
     return jsonify({"message": "Posts cleared successfully"}), 200
 
+@app.route('/user_info/<user_id>')
+def user_info(user_id):
+    db = get_db()
+    users = db.users_tb
+    user = users.find_one({"_id": ObjectId(user_id)})
+    if user:
+        user_data = {
+            "id": str(user["_id"]),
+            "username": user["username"],
+        }
+        return jsonify(user_data)
+    else:
+        return jsonify({"error": "User not found"}), 404
+    
+@app.route('/session_info/')
+def session_info():
+    user_id = session.get('user_id', None)
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+
+    db = get_db()
+    users = db.users_tb
+    user = users.find_one({"_id": ObjectId(user_id)})
+    if user:
+        user_data = {
+            "id": str(user["_id"]),
+            "username": user["username"],
+        }
+        return jsonify(user_data)
+    else:
+        return jsonify({"error": "User not found"}), 404
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969, debug=True)
+
+
