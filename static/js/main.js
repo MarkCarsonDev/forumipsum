@@ -1,41 +1,4 @@
-async function clearPosts() {
-    if (!confirm('This will delete the entire posts table in the database permanently. \n\nPress "OK" to delete the table.')) {
-        return;
-    }
-    const response = await fetch('/clear_posts', {
-        method: 'POST'
-    });
-
-    if (response.ok) {
-        fetchPosts(); // Reload the posts
-    } else {
-        alert('Error clearing posts');
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    // var elem = document.querySelector("#posts");
-    // var msnry = new Masonry(elem, {
-    //     // options
-    //     itemSelector: ".post",
-    //     columnWidth: ".post",
-    //     percentPosition: true,
-    //     gutter: parseInt(window.getComputedStyle(elem).getPropertyValue("gap")),
-    // });
-});
-
-function initMasonry() {
-    var elem = document.querySelector("#posts");
-    var msnry = new Masonry(elem, {
-        // options
-        itemSelector: ".post",
-        columnWidth: ".post",
-        percentPosition: true,
-        gutter: 16,
-    });
-}
-
-// Register
+// Register user
 async function registerUser() {
     const username = document.querySelector('#register-username').value;
     const password = document.querySelector('#register-password').value;
@@ -54,7 +17,7 @@ async function registerUser() {
     }
 }
 
-// Login
+// Login user
 async function loginUser() {
     const username = document.querySelector('#login-username').value;
     const password = document.querySelector('#login-password').value;
@@ -66,17 +29,76 @@ async function loginUser() {
     });
 
     if (response.ok) {
-        window.location.reload();
+        getSessionInfo((session) => {
+            if (session.username) {
+                window.location.href = '/feed'; // Redirect the user to the desired page
+            } else {
+                console.error("Failed to log in");
+            }
+        });
     } else {
         const error = await response.json();
         console.error(error);
     }
 }
 
-// Logout
+// Logout user
 async function logoutUser() {
     await fetch('/logout', { method: 'GET' });
     window.location.reload();
+}
+
+// Get user info
+async function getUserInfo(user_id) {
+    const response = await fetch(`/user_info/${user_id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+
+    });
+
+    if (response.ok) {
+        const userInfo = await response.json();
+        return userInfo;
+    } else {
+        const error = await response.json();
+        throw new Error(error.error);
+    }
+}
+
+// Get session info
+async function getSessionInfo(callback) {
+    const response = await fetch('/session_info', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+        const userInfo = await response.json();
+        if (callback) {
+            callback(userInfo); // Call the callback function here
+        } else {
+            return userInfo;
+        }
+    } else {
+        const error = await response.json();
+        throw new Error(error.error);
+    }
+}
+
+// Delete all posts
+async function clearPosts() {
+    if (!confirm('This will delete the entire posts table in the database permanently. \n\nPress "OK" to delete the table.')) {
+        return;
+    }
+    const response = await fetch('/clear_posts', {
+        method: 'POST'
+    });
+
+    if (response.ok) {
+        fetchPosts(); // Reload the posts
+    } else {
+        alert('Error clearing posts');
+    }
 }
 
 async function dropPosts() {
@@ -84,6 +106,31 @@ async function dropPosts() {
     db.posts_tb.drop();
 }
 
+// Create a new post
+async function createPost(event) {
+    event.preventDefault();
+
+    const title = document.getElementById('new-title').value;
+    const content = document.getElementById('new-content').value;
+
+    const response = await fetch('/posts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title, content })
+    });
+
+    if (response.ok) {
+        fetchPosts(); // Reload the posts
+    } else if (response.status == 400) {
+        alert('Your post contains profanity. Please remove it and try again.');
+    } else {
+        alert('Error creating post: ' + response.message);
+    }
+}
+
+// Fetch and display all posts and post content
 async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
@@ -97,6 +144,7 @@ async function fetchPosts() {
     </div> `;
 
     data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
 
     getSessionInfo().then(session => {
         if (session.username) {
@@ -138,7 +186,7 @@ async function fetchPosts() {
                         <h2 class="post-title">${post.title}</h2>
                         <p class="post-content">${post.content}</p>
                     </div>
-                    <i class="fas fa-comment-alt comments-icon"> ${post.comments.length}</i>
+                    <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
                     `;
                 postsElement.appendChild(postElement);
 
@@ -164,9 +212,11 @@ async function fetchPosts() {
     initMasonry();
 }
 
+// Fetch and display a single post and its content
 async function fetchPost() {
     const response = await fetch('/posts/' + window.location.pathname.split('/')[2]);
 
+    console.log(window.location.pathname.split('/')[2]);
     if (!response.ok) {
         // Handle the case when the post is not found
         if (response.status === 404) {
@@ -223,29 +273,32 @@ async function fetchPost() {
     commentForm.addEventListener('submit', createComment);
 }
 
-async function createPost(event) {
+// Create a new comment
+async function createComment(event) {
     event.preventDefault();
 
-    const title = document.getElementById('new-title').value;
-    const content = document.getElementById('new-content').value;
+    const form = event.target;
+    const postId = form.dataset.postId;
+    const content = form.querySelector(`#content-${postId}`).value;
 
-    const response = await fetch('/posts', {
+    const response = await fetch(`/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ title, content })
+        body: JSON.stringify({ content })
     });
 
     if (response.ok) {
-        fetchPosts(); // Reload the posts
-    } else if (response.status == 400) {
-        alert('Your post contains profanity. Please remove it and try again.');
+        form.reset();
+        fetchPost(); // Reload the post
     } else {
-        alert('Error creating post: ' + response.message);
+        alert('Error creating comment');
     }
 }
 
+
+// Delete a post
 async function deletePost(event) {
     const postId = event.target.dataset.postId;
     const response = await fetch(`/posts/${postId}`, {
@@ -259,76 +312,55 @@ async function deletePost(event) {
     }
 }
 
-async function createComment(event) {
-    event.preventDefault();
-
-    const form = event.target;
-    const postId = form.dataset.postId;
-    const content = form.querySelector(`#content-${postId}`).value;
-    const author = form.querySelector(`#author-${postId}`).value;
-
-    const response = await fetch(`/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content, author })
+// Initialize Masonry layout
+function initMasonry() {
+    var elem = document.querySelector("#posts");
+    var msnry = new Masonry(elem, {
+        // options
+        itemSelector: ".post",
+        columnWidth: ".post",
+        percentPosition: true,
+        gutter: 16,
     });
+}
 
-    if (response.ok) {
-        form.reset();
-        fetchPost(); // Reload the post
-    } else {
-        alert('Error creating comment');
+// Initialize the page and fetch session info
+async function initPage() {
+    try {
+        const session = await getSessionInfo();
+        if (session.username) {
+            const welcomeMessage = document.getElementById("local-profile-info");
+            welcomeMessage.innerHTML = `<h3>Welcome ${session.username},</h3>`;
+        }
+    } catch (error) {
+        console.error("Error getting session info:", error);
     }
+    fetchPosts();
 }
 
 // Event listeners
-document.querySelector('#register-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    registerUser();
-});
-
-document.querySelector('#login-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    loginUser();
-});
-
-document.querySelector('#logout-button').addEventListener('click', (event) => {
-    event.preventDefault();
-    logoutUser();
-});
-
-async function getSessionInfo() {
-    const response = await fetch('/session_info', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+const registerForm = document.querySelector('#register-form');
+if (registerForm) {
+    registerForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        registerUser();
     });
-
-    if (response.ok) {
-        const userInfo = await response.json();
-        return userInfo;
-    } else {
-        const error = await response.json();
-        throw new Error(error.error);
-    }
 }
 
-
-async function getUserInfo(user_id) {
-    const response = await fetch(`/user_info/${user_id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-
+const loginForm = document.querySelector('#login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        loginUser();
     });
+}
 
-    if (response.ok) {
-        const userInfo = await response.json();
-        return userInfo;
-    } else {
-        const error = await response.json();
-        throw new Error(error.error);
-    }
+const logoutButton = document.querySelector('#logout-button');
+if (logoutButton) {
+    logoutButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        logoutUser();
+    });
 }
 
 async function logoutUser() {
@@ -342,3 +374,15 @@ async function logoutUser() {
         console.error("Failed to log out");
     }
 }
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    // var elem = document.querySelector("#posts");
+    // var msnry = new Masonry(elem, {
+    //     // options
+    //     itemSelector: ".post",
+    //     columnWidth: ".post",
+    //     percentPosition: true,
+    //     gutter: parseInt(window.getComputedStyle(elem).getPropertyValue("gap")),
+    // });
+});
