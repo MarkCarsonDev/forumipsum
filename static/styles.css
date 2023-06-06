@@ -17,7 +17,7 @@
 
 
 
-    --main-bg-color: #333056;
+    --main-bg-color: #3d3b54;
     --meta-text-color: #ddd;
     /* --frosted-bg-color: rgba(0, 0, 5, 0.4); */
     --input-bg-color: rgba(0, 0, 0, 0.4);
@@ -51,12 +51,12 @@ body {
     height: 100%;
     margin: 0;
     overflow: hidden;
-    background: linear-gradient(-45deg, var(--main-bg-color), rgb(40, 23, 39), rgb(24, 10, 1));
+    background: linear-gradient(-45deg, var(--main-bg-color), rgb(35, 31, 40), rgb(19, 19, 27));
     /* background: linear-gradient(-45deg, #a0c1d1, #e0e0e0, #ffffff, #d7e6f2); */
-    /* background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fbc2eb, #a6c1ee); */
+    /* background: linear-gradient(-45deg, #fac5c7, #fad0c4, #f9ddf1, #c3d5f4); */
     /* background: linear-gradient(-45deg, #2E3192, #1BFFFF, #1E90FF, #00a8cc); */
-    /* background: linear-gradient(to top, rgb(54, 69, 113), rgb(107, 78, 53) 50%, rgb(179, 98, 49) 94%, rgb(158, 44, 44) 100%); sunset */
-    /* background: linear-gradient(to top, rgb(36, 37, 40), rgb(68, 71, 71) 50%, rgb(127, 130, 130) 94%, rgb(119, 122, 123) 100%); */
+    /* background: linear-gradient(to top, rgb(54, 69, 113), rgb(107, 78, 53) 50%, rgb(179, 98, 49) 94%, rgb(158, 44, 44) 100%);  */
+    /* background: linear-gradient(to top, rgb(119, 122, 132) 50%, rgb(189, 194, 194) 94%, rgb(119, 122, 123) 100%); */
     background-size: 200% 200%;
     animation: gradient 5s ease;
     animation-fill-mode: forwards;
@@ -91,10 +91,10 @@ body {
     grid-template-areas:
     'nav nav nav'
     'header profile-info profile-pic'
-    'subheader search search'
+    'header search search'
     'posts posts posts';
     grid-template-columns: 70% 20% 10%;
-    grid-template-rows: 10% 14% 10% 66%;
+    grid-template-rows: 10% 14% 16% 60%;
     gap: 0;
     width: 100%;
     height: 100%;
@@ -216,28 +216,9 @@ body {
 /* Header section */
 #header {
     grid-area: header;
-    margin-left: 1%;
-}
-
-#header h1 {
-    letter-spacing: 0.15em;
-    margin: 0;
-    font-size: 4em;
-    z-index: 1;
-    font-weight: 500;
-    color: var(--white-text-color);
-    font-family: var(--roboto-font-family);
-    white-space: nowrap;
-}
-
-#header h3 {
-    padding-top: 3%;
-    margin: 0;
-    font-size: 0.8em;
-    z-index: 1;
-    font-weight: 500;
-    color: var(--white-subtext-color);
-    font-family: var(--roboto-font-family);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Profile info section */
@@ -440,11 +421,26 @@ body {
 }
 
 /* New Post */
+#new-post {
+    height: 90%;
+    margin-top: 3%;
+    width: 100%;
+}
+
 form#new-post-form {
+    height: 100%;
     background: linear-gradient(45deg, rgba(47, 50, 46, 0.8), rgba(19, 19, 19, 0.8));
     border-radius: 1.25em;
-    padding: 1.25em;
+    padding: 1em;
     border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.content-submit {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: 1em;
+    height: 60%;
 }
 
 form.comment-form {
@@ -463,6 +459,7 @@ form.comment-form textarea {
     color: var(--white-text-color);
     margin-bottom: 0.5em;
     font-family: var(--main-font-family);
+    resize: none;
 }
 
 form#new-post-form button[type="submit"], 

@@ -2,7 +2,6 @@
 async function registerUser() {
     const username = document.querySelector('#register-username').value;
     const password = document.querySelector('#register-password').value;
-
     const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -81,7 +80,8 @@ async function getSessionInfo(callback) {
         }
     } else {
         const error = await response.json();
-        throw new Error(error.error);
+        console.log(error)
+        return error;
     }
 }
 
@@ -95,7 +95,7 @@ async function clearPosts() {
     });
 
     if (response.ok) {
-        fetchPosts(); // Reload the posts
+        loadFeed(); // Reload the posts
     } else {
         alert('Error clearing posts');
     }
@@ -122,12 +122,17 @@ async function createPost(event) {
     });
 
     if (response.ok) {
-        fetchPosts(); // Reload the posts
+        loadFeed(); // Reload the posts
     } else if (response.status == 400) {
         alert('Your post contains profanity. Please remove it and try again.');
     } else {
-        alert('Error creating post: ' + response.message);
+        alert('Error creating post: ' + response.status);
     }
+}
+
+async function loadFeed() {
+    await fetchPosts();
+    console.log("Loaded posts");
 }
 
 // Fetch and display all posts and post content
@@ -135,8 +140,7 @@ async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
     const postsElement = document.getElementById('posts');
-
-
+    const headerElement = document.getElementById('header');
 
     postsElement.innerHTML = `
     <div id="posts-footer">
@@ -147,34 +151,8 @@ async function fetchPosts() {
 
 
     getSessionInfo().then(session => {
-        if (session.username) {
-            console.log("im in >:)")
-            postsElement.innerHTML = postsElement.innerHTML + `<div class="post" id="new-post">
-            <form id="new-post-form">
-                    <input type="text" id="new-title" name="title" placeholder="Title" required>
-                        <br>
-                    <textarea id="new-content" name="content" placeholder="Write something!" required></textarea>
-                        <br>
-                    <button class="frosted" type="submit"> 
-                        <i class="fas fa-plus plus-icon"></i>
-                    </button>
-                </form>
-            </div>`;
 
-            const postForm = document.getElementById('new-post-form');
-            postForm.addEventListener('submit', createPost);
-
-            const logoutButton = document.getElementById('logout-button');
-            logoutButton.classList.remove('hidden');
-            logoutButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                logoutUser();
-            });
-        } else {
-            const loginButton = document.getElementById('login-button');
-            loginButton.classList.remove('hidden');
-        }
-
+        t = setTimeout(initMasonry, 1000);
         data.posts.forEach(post => {
             getUserInfo(post.author).then(author => {
                 const postElement = document.createElement('div');
@@ -205,11 +183,61 @@ async function fetchPosts() {
                 trashcanIcon.dataset.postId = post._id;
                 trashcanIcon.addEventListener('click', deletePost);
             });
+
+            // TODO - Garbage solution to masonry not working on load
+            clearTimeout(t);
+            t = setTimeout(initMasonry, 400);
+
+            console.log("Instantiated post: " + post.title);
         });
+
+        
+        if (session.username) {
+            console.log("Logged in as user: " + session.username)
+
+            headerElement.innerHTML = `<div class="post" id="new-post">
+            <form id="new-post-form">
+                    <input type="text" id="new-title" name="title" placeholder="Title" required>
+                        <br>
+                    <div class="content-submit">
+                    <textarea type="text" id="new-content" name="content" placeholder="Write something!" required></textarea>
+                    <button class="frosted" type="submit" id="newform-submit"> 
+                        <i class="fas fa-plus plus-icon"></i>
+                    </button>
+                    </div>
+                </form>
+            </div>`;
+
+            const postForm = document.getElementById('new-post-form');
+            postForm.addEventListener('submit', createPost);
+
+            // Here is the new code to handle the Enter key press in the textarea
+            const newContent = document.getElementById('new-content');
+            newContent.addEventListener('keydown', function(e) {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    document.querySelector('#newform-submit').click();
+                }
+            });
+
+            const logoutButton = document.getElementById('logout-button');
+            logoutButton.classList.remove('hidden');
+            logoutButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                logoutUser();
+            });
+
+            // initMasonry();
+        } else {
+            const loginButton = document.getElementById('login-button');
+            loginButton.classList.remove('hidden');
+        }
+
+        //  TODO - FIX GARBAGE CODE
+        // setTimeout(() => {
+        //     initMasonry();
+        // }, 500);
     });
-
-
-    initMasonry();
 }
 
 // Fetch and display a single post and its content
@@ -222,13 +250,14 @@ async function fetchPost() {
         if (response.status === 404) {
             alert('Post not found');
         } else {
-            alert('Error viewing post... Returning to feed!');
+            alert('Error viewing post:' + response.status);
             window.location.href = `/feed`;
         }
         return;
     }
 
-    const post = await response.json();
+    const data = await response.json();
+    const post = data.post;
     const postElement = document.getElementById('post');
 
     postElement.className = 'post';
@@ -293,7 +322,7 @@ async function createComment(event) {
         form.reset();
         fetchPost(); // Reload the post
     } else {
-        alert('Error creating comment');
+        alert('Error creating comment: ' + response.status);
     }
 }
 
@@ -306,9 +335,9 @@ async function deletePost(event) {
     });
 
     if (response.ok) {
-        fetchPosts(); // Reload the posts
+        loadFeed(); // Reload the posts
     } else {
-        alert('Error deleting post');
+        alert('Error deleting post: ' + response.status);
     }
 }
 
@@ -322,6 +351,8 @@ function initMasonry() {
         percentPosition: true,
         gutter: 16,
     });
+    console.log("Initialized Masonry layout")
+    return msnry; // return the Masonry instance
 }
 
 // Initialize the page and fetch session info
@@ -335,7 +366,7 @@ async function initPage() {
     } catch (error) {
         console.error("Error getting session info:", error);
     }
-    fetchPosts();
+    loadFeed();
 }
 
 // Event listeners
@@ -376,13 +407,6 @@ async function logoutUser() {
 }
 
 
-document.addEventListener("DOMContentLoaded", function () {
-    // var elem = document.querySelector("#posts");
-    // var msnry = new Masonry(elem, {
-    //     // options
-    //     itemSelector: ".post",
-    //     columnWidth: ".post",
-    //     percentPosition: true,
-    //     gutter: parseInt(window.getComputedStyle(elem).getPropertyValue("gap")),
-    // });
-});
+// document.addEventListener("DOMContentLoaded", function () {
+    
+// });

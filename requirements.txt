@@ -1,5 +1,9 @@
 flask
 pymongo
 datetime
-bson
 werkzeug
+fastapi
+peft
+transformers
+requests
+uvicorn[standard]

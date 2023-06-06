@@ -19,3 +19,10 @@ services:
       - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
     ports:
       - "27017:27017"
+  # model:
+  #   build: .
+  #   command: uvicorn alpaca_api_waypoint:app --host 0.0.0.0 --port 8100
+  #   volumes:
+  #     - .:/alpaca_api_waypoint
+  #   ports:
+  #     - "8100:8100"

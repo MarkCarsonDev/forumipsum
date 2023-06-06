@@ -1,12 +1,14 @@
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for, json
+from flask import Flask, jsonify, render_template, request, session, redirect, url_for, json, Response
 import pymongo
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-from bson.json_util import dumps
+from bson import json_util
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import requests
+import json
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -25,7 +27,6 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app.json_encoder = CustomJSONEncoder
 
-
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -35,8 +36,6 @@ def login_required(f):
     return decorated_function
 
 # Database connection function
-
-
 def get_db():
     client = MongoClient(host='mongodb',
                          port=27017,
@@ -97,29 +96,30 @@ def logout():
 @app.route('/posts_dump')
 def posts_dump():
     db = get_db()
-    posts = db.posts_tb.find()
-    return jsonify({"post_dump": dumps(posts)})
+    posts = list(db.posts_tb.find())
+    return Response(json_util.dumps({"posts_dump": posts}), mimetype='application/json')
 
 
 @app.route('/users_dump')
 def users_dump():
     db = get_db()
-    users = db.users_tb.find()
-    return jsonify({"users_dump": dumps(users)})
+    users = list(db.users_tb.find())
+    return Response(json_util.dumps({"users_dump": users}), mimetype='application/json')
+
+@app.route('/')
+def home():
+    return redirect(url_for('display_feed'))
 
 # Route for displaying the feed
-
-
 @app.route('/feed')
 def display_feed():
     return render_template('feed.html')
 
 # Route for fetching posts
-
-
 @app.route('/posts')
 def fetch_posts():
     db = get_db()
+    print(db)
     _posts = db.posts_tb.find().sort('date', pymongo.DESCENDING)
     posts = [
         {
@@ -128,7 +128,14 @@ def fetch_posts():
             "content": post['content'],
             "author": str(post['author']),
             "date": post['date'].strftime("%Y-%m-%d %H:%M:%S"),
-            "comments": post['comments']
+            "comments": [
+                {
+                    "content": comment['content'],
+                    "author": str(comment['author']),
+                    "date": comment['date'].strftime("%Y-%m-%d %H:%M:%S")
+                }
+                for comment in post['comments']
+            ]
         }
         for post in _posts
     ]
@@ -172,7 +179,7 @@ def fetch_post(post_id):
             "date": post["date"].strftime("%Y-%m-%d %H:%M:%S"),
             "comments": [
                 {
-                    "_id": str(comment["_id"]),
+                    #"_id": str(comment["_id"]),
                     "content": comment["content"],
                     "author": str(comment["author"]),
                     "date": comment["date"].strftime("%Y-%m-%d %H:%M:%S")
@@ -209,12 +216,15 @@ def create_post():
         "content": post_data["content"],
         "author": ObjectId(session['user_id']),
         "date": datetime.utcnow(),
-        "comments": []
+        "comments": [],
+        "blocked": False
     }
 
+
     # filtering
+    #print(post_thru_alpaca(post_data["content"]))
     if ("badword" in new_post["title"].lower() or "badword" in new_post["content"].lower()):
-        return jsonify({"message": "Failed content filter"}), 400
+        new_post["blocked"] = True
 
     db.posts_tb.insert_one(new_post)
     return jsonify({"message": "Post created successfully"}), 201
@@ -252,12 +262,14 @@ def create_comment(post_id):
     new_comment = {
         "content": comment_data["content"],
         "author": ObjectId(session['user_id']),
-        "date": datetime.utcnow()
+        "date": datetime.utcnow(),
+        "blocked": False
     }
 
     # filtering
     if ("badword" in new_comment["content"].lower()):
-        return jsonify({"message": "Failed content filter"}), 400
+        new_comment["blocked"] = True
+        # return jsonify({"message": "Failed content filter"}), 400
     # call the model with the GPT sample text + banned content
 
     # Find the parent post and append the new comment
@@ -272,8 +284,6 @@ def create_comment(post_id):
         return jsonify({"message": "Error creating comment"}), 500
 
 # Route for clearing all posts
-
-
 @app.route('/clear_posts', methods=['POST'])
 def clear_posts():
     db = get_db()
@@ -314,6 +324,23 @@ def session_info():
     else:
         return jsonify({"error": "User not found"}), 404
 
+
+# URL of the API endpoint
+url = "http://localhost:8100/classify"
+
+# What does Alpaca say about this?
+def post_thru_alpaca(data):
+    # Convert data into JSON format
+    json_data = json.dumps(data)
+
+    # Send POST request to the API endpoint
+    response = requests.post(url, json=json_data)
+
+    # TODO: Clean the response text if needed
+    #
+    
+    # Return the response
+    return response.text
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969, debug=True)
