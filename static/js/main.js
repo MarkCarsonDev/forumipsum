@@ -149,6 +149,7 @@ async function fetchPosts() {
 
     data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    console.log(data.posts);
 
     getSessionInfo().then(session => {
 
@@ -157,7 +158,8 @@ async function fetchPosts() {
             getUserInfo(post.author).then(author => {
                 const postElement = document.createElement('div');
                 postElement.className = 'post frosted';
-                postElement.innerHTML = `
+                if (post.blocked == "False") {
+                    postElement.innerHTML = `
                     <i class="fas fa-trash-alt trashcan-icon"></i>
                     <div class="main-post">
                         <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
@@ -166,6 +168,18 @@ async function fetchPosts() {
                     </div>
                     <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
                     `;
+                } else {
+                    postElement.className = postElement.className + ' blocked';
+                    postElement.innerHTML = `
+                    <i class="fas fa-trash-alt trashcan-icon"></i>
+                    <div class="main-post">
+                        <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+                        <h2 class="post-title"><i>--- </i></h2>
+                        <p class="post-content"><i>This post's content is marked as blocked. If you believe this to be an error, contact the site admin.</i></p>
+                    </div>
+                    <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
+                    `; 
+                }
                 postsElement.appendChild(postElement);
 
                 postElement.addEventListener('click', (event) => {
@@ -188,7 +202,7 @@ async function fetchPosts() {
             clearTimeout(t);
             t = setTimeout(initMasonry, 400);
 
-            console.log("Instantiated post: " + post.title);
+            console.log("Instantiated post: " + post.title + " - " + post.blocked);
         });
 
         
@@ -197,10 +211,10 @@ async function fetchPosts() {
 
             headerElement.innerHTML = `<div class="post" id="new-post">
             <form id="new-post-form">
-                    <input type="text" id="new-title" name="title" placeholder="Title" required>
+                    <input type="text" id="new-title" name="title" placeholder="Say something interesting" required>
                         <br>
                     <div class="content-submit">
-                    <textarea type="text" id="new-content" name="content" placeholder="Write something!" required></textarea>
+                    <textarea type="text" id="new-content" name="content" placeholder="... and write about it!" required></textarea>
                     <button class="frosted" type="submit" id="newform-submit"> 
                         <i class="fas fa-plus plus-icon"></i>
                     </button>

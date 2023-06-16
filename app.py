@@ -58,8 +58,11 @@ def register():
         if users.find_one({"username": username}):
             return jsonify({"error": "Username already exists"}), 400
 
-        user_id = users.insert_one(
-            {"username": username, "password": hashed_password}).inserted_id
+        user_id = users.insert_one({
+            "username": username, 
+            "password": hashed_password,
+            "admin": True if username == 'admin' else False
+        }).inserted_id
         session['user_id'] = str(user_id)
         return redirect(url_for('display_feed'))
 
@@ -115,27 +118,43 @@ def home():
 def display_feed():
     return render_template('feed.html')
 
-# Route for fetching posts
 @app.route('/posts')
 def fetch_posts():
     db = get_db()
-    print(db)
+    _users = db.users_tb
+
+    user = None
+    if 'user_id' in session:
+        user = _users.find_one({"_id": ObjectId(session['user_id'])})
+
+    def can_see_post(post, user):
+        is_author = 'user_id' in session and post['author'] == session['user_id']
+        is_admin = 'user_id' in session and user["admin"]
+        return not post['blocked'] or is_author or is_admin
+
+    def can_see_comment(comment, user):
+        is_author = 'user_id' in session and comment['author'] == session['user_id']
+        is_admin = 'user_id' in session and user["admin"]
+        return not comment['blocked'] or is_author or is_admin
+
     _posts = db.posts_tb.find().sort('date', pymongo.DESCENDING)
     posts = [
         {
             "_id": str(post['_id']),
-            "title": post['title'],
-            "content": post['content'],
+            "title": post['title'] if can_see_post(post, user) else '',
+            "content": post['content'] if can_see_post(post, user) else '',
             "author": str(post['author']),
             "date": post['date'].strftime("%Y-%m-%d %H:%M:%S"),
             "comments": [
                 {
-                    "content": comment['content'],
+                    "content": comment['content'] if can_see_comment(comment, user) else '',
                     "author": str(comment['author']),
-                    "date": comment['date'].strftime("%Y-%m-%d %H:%M:%S")
+                    "date": comment['date'].strftime("%Y-%m-%d %H:%M:%S"),
+                    "blocked": str(comment['blocked'])
                 }
                 for comment in post['comments']
-            ]
+            ],
+            "blocked": str(post['blocked'])
         }
         for post in _posts
     ]
@@ -164,34 +183,51 @@ def fetch_post(post_id):
         post_object_id = ObjectId(post_id)
     except InvalidId:
         return jsonify({"error": "Invalid post_id"}), 400
-        print("Invalid post_id")
 
-    post = db.posts_tb.find_one({"_id": ObjectId(post_object_id)})
+    _users = db.users_tb
+
+    user = None
+    if 'user_id' in session:
+        user = _users.find_one({"_id": ObjectId(session['user_id'])})
+
+    post = db.posts_tb.find_one({"_id": post_object_id})
+
+    def can_see_post(post, user):
+        is_author = 'user_id' in session and post['author'] == session['user_id']
+        is_admin = user is not None and user["admin"]
+        return not post['blocked'] or is_author or is_admin
+
+    def can_see_comment(comment, user):
+        is_author = 'user_id' in session and comment['author'] == session['user_id']
+        is_admin = user is not None and user["admin"]
+        return not comment['blocked'] or is_author or is_admin
 
     # Check if the post was found
     if post:
         # Convert ObjectId fields to strings and format the date
         formatted_post = {
             "_id": str(post["_id"]),
-            "title": post["title"],
-            "content": post["content"],
+            "title": post['title'] if can_see_post(post, user) else '',
+            "content": post['content'] if can_see_post(post, user) else '',
             "author": str(post["author"]),
             "date": post["date"].strftime("%Y-%m-%d %H:%M:%S"),
             "comments": [
                 {
-                    #"_id": str(comment["_id"]),
-                    "content": comment["content"],
+                    "content": comment['content'] if can_see_comment(comment, user) else '',
                     "author": str(comment["author"]),
-                    "date": comment["date"].strftime("%Y-%m-%d %H:%M:%S")
+                    "date": comment["date"].strftime("%Y-%m-%d %H:%M:%S"),
+                    "blocked": str(comment["blocked"])
                 }
                 for comment in post["comments"]
-            ]
+            ],
+            "blocked": str(post["blocked"])
         }
         # Return the JSON response
         return jsonify({"post": formatted_post})
     else:
         # Return a 404 not found status if the post is not found
         return jsonify({"error": "Post not found"}), 404
+
 
 
 # Route for creating a new post
@@ -300,6 +336,7 @@ def user_info(user_id):
         user_data = {
             "id": str(user["_id"]),
             "username": user["username"],
+            "admin": user["admin"]
         }
         return jsonify(user_data)
     else:
