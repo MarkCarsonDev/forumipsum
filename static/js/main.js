@@ -142,204 +142,266 @@ async function loadFeed() {
 async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
+
     const postsElement = document.getElementById('posts');
     const headerElement = document.getElementById('header');
 
-    postsElement.innerHTML = `
-    <div id="posts-footer">
-        <p>You've reached the bottom!</p>
-    </div> `;
+    clearElement(postsElement);
+    postsElement.append(createPostFooter());
 
     data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    console.log(data.posts);
+    const session = await getSessionInfo();
 
-    getSessionInfo().then(session => {
+    // Use Promise.all() to wait until all posts are fetched and added to the page
+    await Promise.all(data.posts.map(async (post) => {
+        const author = await getUserInfo(post.author);
+        const postElement = createPostElement(post, author);
+        postsElement.append(postElement);
+    }));
 
-        t = setTimeout(initMasonry, 1000);
-        data.posts.forEach(post => {
-            getUserInfo(post.author).then(author => {
-                const postElement = document.createElement('div');
-                postElement.className = 'post frosted' + (post.blocked  == "True" ? ' blocked' : '')  + (post.misinformation  == "True" ? ' misinfo' : '');
-                if (post.blocked == "False" || post.title != '') {
-                    postElement.innerHTML = `
-                    <i class="fas fa-trash-alt trashcan-icon"></i>
-                    <div class="main-post">
-                        <p class="post-meta"><span class='post-author'>${author.username}</span> on ${post.date}</p>
-                        <h2 class="post-title">${post.title}</h2>
-                        <p class="post-content">${post.content}</p>
-                    </div>
-                    <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
-                    `;
-                } else {
-                    postElement.innerHTML = `
-                    <i class="fas fa-trash-alt trashcan-icon"></i>
-                    <div class="main-post">
-                        <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
-                        <h2 class="post-title">${blocked_title}</h2>
-                        <p class="post-content">${blocked_content}}</p>
-                    </div>
-                    <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
-                    `; 
-                }
-                postsElement.appendChild(postElement);
+    displayHeaderContent(session, headerElement);
 
-                postElement.addEventListener('click', (event) => {
-                    // Check if the event target is not a trashcan icon or any form element
-                    if (
-                        !event.target.matches('.trashcan-icon, form, form *') &&
-                        !event.target.closest('.comments-section')
-                    ) {
-                        window.location.href = `/p/${post._id}`;
-                    }
-                });
+    // initMasonry() is called after all posts are fetched and added to the page
+    initMasonry();
+}
 
 
-                const trashcanIcon = postElement.querySelector('.trashcan-icon');
-                trashcanIcon.dataset.postId = post._id;
-                trashcanIcon.addEventListener('click', deletePost);
-            });
+function clearElement(element) {
+    element.innerHTML = '';
+}
 
-            // TODO - Garbage solution to masonry not working on load
-            clearTimeout(t);
-            t = setTimeout(initMasonry, 400);
+function createPostFooter() {
+    const footer = document.createElement('div');
+    footer.id = "posts-footer";
+    footer.innerHTML = `<p>You've reached the bottom!</p>`;
+    return footer;
+}
 
-            console.log("Instantiated post: " + post.title);
-        });
+function createPostElement(post, author) {
+    const postElement = document.createElement('div');
+    postElement.className = 'post frosted' + (post.blocked === "True" ? ' blocked' : '') + (post.misinformation === "True" ? ' misinfo' : '');
+    postElement.innerHTML = generatePostHTML(post, author);
+    postElement.addEventListener('click', (event) => redirectOnClick(event, post));
+    const trashcanIcon = postElement.querySelector('.trashcan-icon');
+    trashcanIcon.dataset.postId = post._id;
+    trashcanIcon.addEventListener('click', deletePost);
+    return postElement;
+}
 
-        
-        if (session.username) {
-            console.log("Logged in as user: " + session.username)
+function generatePostHTML(post, author) {
+    let postHTML = '';
+    if (post.blocked === "False" || post.title !== '') {
+        postHTML = getPostHTML(post, author);
+    } else {
+        postHTML = getBlockedPostHTML();
+    }
+    return postHTML;
+}
 
-            headerElement.innerHTML = `<div class="post" id="new-post">
-            <form id="new-post-form">
+function getPostHTML(post, author) {
+    return `
+        <i class="fas fa-trash-alt trashcan-icon"></i>
+        <div class="main-post">
+            <p class="post-meta"><span class='post-author'>${author.username}</span> on ${post.date}</p>
+            <h2 class="post-title">${post.title}</h2>
+            <p class="post-content">${post.content}</p>
+        </div>
+        <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
+        `;
+}
+
+function getBlockedPostHTML() {
+    return `
+        <i class="fas fa-trash-alt trashcan-icon"></i>
+        <div class="main-post">
+            <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
+            <h2 class="post-title">${blocked_title}</h2>
+            <p class="post-content">${blocked_content}</p>
+        </div>
+        <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
+        `;
+}
+
+function redirectOnClick(event, post) {
+    if (!event.target.matches('.trashcan-icon, form, form *') && !event.target.closest('.comments-section')) {
+        window.location.href = `/p/${post._id}`;
+    }
+}
+
+function displayHeaderContent(session, headerElement) {
+    if (session.username) {
+        headerElement.innerHTML = generatePostFormHTML();
+        document.getElementById('new-post-form').addEventListener('submit', createPost);
+        document.getElementById('new-content').addEventListener('keydown', handleTextareaEnterKey);
+        document.getElementById('logout-button').classList.remove('hidden');
+        document.getElementById('logout-button').addEventListener('click', logoutUser);
+    } else {
+        document.getElementById('login-button').classList.remove('hidden');
+    }
+}
+
+function generatePostFormHTML() {
+    return `<div class="post" id="new-post">
+                <form id="new-post-form">
                     <input type="text" id="new-title" name="title" placeholder="Say something interesting" required>
                         <br>
                     <div class="content-submit">
-                    <textarea type="text" id="new-content" name="content" placeholder="... and write about it!" required></textarea>
-                    <button class="frosted" type="submit" id="newform-submit"> 
-                        <i class="fas fa-plus plus-icon"></i>
-                    </button>
+                        <textarea type="text" id="new-content" name="content" placeholder="... and write about it!" required></textarea>
+                        <button class="frosted" type="submit" id="newform-submit">
+                            <i class="fas fa-plus plus-icon"></i>
+                        </button>
                     </div>
                 </form>
             </div>`;
+}
 
-            const postForm = document.getElementById('new-post-form');
-            postForm.addEventListener('submit', createPost);
-
-            // Here is the new code to handle the Enter key press in the textarea
-            const newContent = document.getElementById('new-content');
-            newContent.addEventListener('keydown', function(e) {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    document.querySelector('#newform-submit').click();
-                }
-            });
-
-            const logoutButton = document.getElementById('logout-button');
-            logoutButton.classList.remove('hidden');
-            logoutButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                logoutUser();
-            });
-
-            // initMasonry();
-        } else {
-            const loginButton = document.getElementById('login-button');
-            loginButton.classList.remove('hidden');
-        }
-
-        //  TODO - FIX GARBAGE CODE
-        // setTimeout(() => {
-        //     initMasonry();
-        // }, 500);
-    });
+function handleTextareaEnterKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.querySelector('#newform-submit').click();
+    }
 }
 
 // Fetch and display a single post and its content
-// Fetch and display a single post and its content
 async function fetchPost() {
-    const response = await fetch('/posts/' + window.location.pathname.split('/')[2]);
+    // Get the post ID from the URL
+    const postId = window.location.pathname.split('/')[2];
+    
+    // Fetch the post data
+    const response = await fetch('/posts/' + postId);
 
+    // Check if the response is OK, if not, handle the error
     if (!response.ok) {
-        // Handle the case when the post is not found
-        if (response.status === 404) {
-            alert('Post not found');
-        } else {
-            alert('Error viewing post:' + response.status);
-            window.location.href = `/feed`;
-        }
+        handleResponseError(response);
         return;
     }
 
     const data = await response.json();
     const post = data.post;
+
+    // Get the main post element
     const postElement = document.getElementById('post');
-    let postContent = post.content;
-    let postTitle = post.title;
-    
+
     // Fetch the author information
     const author = await getUserInfo(post.author);
 
-    if (post.blocked == "True" || post.title == '') {
+    // Update the post element class names based on the post status
+    updatePostClassNames(post, postElement);
+
+    // Append the post content and comments section to the post element
+    postElement.append(createPostContent(post, author));
+    postElement.append(await createCommentsSection(post));
+}
+
+// Handles the case when the fetch response is not OK
+function handleResponseError(response) {
+    // If the response status is 404, notify the user that the post was not found
+    if (response.status === 404) {
+        alert('Post not found');
+    } 
+    // If the response status is something else, notify the user of the error and redirect to the feed page
+    else {
+        alert('Error viewing post:' + response.status);
+        window.location.href = `/feed`;
+    }
+}
+
+// Update the class name of the post element based on the post status
+function updatePostClassNames(post, postElement) {
+    // If the post is blocked, add the 'blocked' class
+    if (post.blocked === "True") postElement.classList.add('blocked');
+
+    // If the post is misinformation, add the 'misinformation' class
+    if (post.misinformation === "True") postElement.classList.add('misinformation');
+}
+
+// Create the post content HTML
+function createPostContent(post, author) {
+    // Set the default post content and title
+    let postContent = post.content;
+    let postTitle = post.title;
+
+    // If the post is blocked or has no title, set the content and title to the blocked content and title
+    if (post.blocked === "True" || post.title === '') {
         postContent = `${blocked_content}`;
         postTitle = `${blocked_title}`;
     }
-    postElement.className = postElement.className + (post.blocked  == "True" ? ' blocked' : '');
-    postElement.className = postElement.className + (post.misinformation  == "True" ? ' misinformation' : '');
-    
 
-    const commentsHTML = await Promise.all(post.comments.map(async comment => {
-        let commentContent = comment.content;
+    // Create a new div element and set its inner HTML to the post content HTML
+    const postContentElement = document.createElement('div');
+    postContentElement.innerHTML = getPostHTML(post, author);
+
+    return postContentElement;
+}
+
+// Create the comments section HTML
+async function createCommentsSection(post) {
+    // Fetch the comments HTML
+    const commentsHTML = await getCommentsHTML(post);
+
+    // Create a new div element for the comments section
+    const commentsSection = document.createElement('div');
+    commentsSection.className = "comments-section";
+
+    // Set the inner HTML of the comments section to the comments HTML and the comment form HTML
+    commentsSection.innerHTML = `
+        <div class="comments">
+            <ul>
+                ${commentsHTML.join('')}
+            </ul>
+        </div>
+        ${generateCommentFormHTML(post)}
+    `;
+
+    // Add an event listener to the comment form submit event
+    commentsSection.querySelector(`#comment-form-${post._id}`).addEventListener('submit', createComment);
+
+    return commentsSection;
+}
+
+// Fetch the comments HTML
+async function getCommentsHTML(post) {
+    // Map each comment to its HTML
+    return await Promise.all(post.comments.map(async comment => {
         // Fetch the comment author information
         const commentAuthor = await getUserInfo(comment.author);
 
-        if (comment.blocked == 'True' || comment.content == '') {
+        // Set the default comment content
+        let commentContent = comment.content;
+
+        // If the comment is blocked or has no content, set the content to the blocked title
+        if (comment.blocked === 'True' || comment.content === '') {
             commentContent = `${blocked_title}`;
         }
+
+        // Return the comment HTML
         return `
         <li>
-            <div class="comment${(post.blocked  == "True" ? ' blocked' : '')}">
+            <div class="comment${(post.blocked === "True" ? ' blocked' : '')}">
                 <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> on ${comment.date}</p>
                 <p>${commentContent}</p>
             </div>
         </li>`;
     }));
-
-    postElement.innerHTML = `
-        <i class="fas fa-trash-alt trashcan-icon"></i>
-        <div class="main-post">
-            <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
-            <h2 class="post-title">${postTitle}</h2>
-            <p class="post-content">${postContent}</p>
-        </div>
-        <div class="comments-section">
-            <div class="comments">
-                <ul>
-                    ${commentsHTML.join('')}
-                </ul>
-            </div>
-            <div>
-                <form class="comment-form" id="comment-form-${post._id}">
-                    <textarea rows="2" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
-                    <br>
-                    <div class="submission">
-                        <button type="submit">
-                        <i class="fas fa-comment-alt comments-icon"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-
-    const commentForm = postElement.querySelector(`#comment-form-${post._id}`);
-    commentForm.dataset.postId = post._id;
-    commentForm.addEventListener('submit', createComment);
 }
 
-
-
+// Generate the comment form HTML
+function generateCommentFormHTML(post) {
+    return `
+        <div>
+            <form class="comment-form" id="comment-form-${post._id}">
+                <textarea rows="2" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
+                <br>
+                <div class="submission">
+                    <button type="submit">
+                    <i class="fas fa-comment-alt comments-icon"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+}
 
 // Create a new comment
 async function createComment(event) {
