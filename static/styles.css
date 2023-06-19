@@ -6,6 +6,7 @@
     --nav-anchor-highlight-color: rgb(59, 63, 63);
     --frosted-bg-color: rgba(255, 255, 255, 0.1);
     --blocked-post-bg-color: rgba(255, 59, 59, 0.1);
+    --misinfo-post-bg-color: rgba(33, 32, 24, 0.431);
     --frosted-fg-color: rgba(255, 255, 255, 0.2);
     --white-shadow-color: rgba(250, 250, 255, 0.2);
     --shadow-color: rgba(0, 0, 0, 0.25);
@@ -547,5 +548,15 @@ form.comment-form button[type="submit"]:hover .plus-icon {
 }
 
 .frosted .blocked {
-    background-image: linear-gradient(135deg, var(--blocked-post-bg-color), rgba(255, 255, 255, 0));
+    background-image: linear-gradient(135deg, var(--blocked-post-bg-color), rgba(255, 255, 255, 0)) !important;
+}
+
+.frosted .misinfo {
+    background-image: linear-gradient(135deg, var(--misinfo-post-bg-color), rgba(255, 255, 255, 0));
+}
+
+.post-author {
+    background-color: rgba(0, 0, 0, 0.337);
+    border-radius: 0.3em;
+    padding: 0.3em 0.5em;
 }

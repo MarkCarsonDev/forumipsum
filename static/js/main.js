@@ -160,12 +160,12 @@ async function fetchPosts() {
         data.posts.forEach(post => {
             getUserInfo(post.author).then(author => {
                 const postElement = document.createElement('div');
-                postElement.className = 'post frosted' + (post.blocked  == "True" ? ' blocked' : '');
+                postElement.className = 'post frosted' + (post.blocked  == "True" ? ' blocked' : '')  + (post.misinformation  == "True" ? ' misinfo' : '');
                 if (post.blocked == "False" || post.title != '') {
                     postElement.innerHTML = `
                     <i class="fas fa-trash-alt trashcan-icon"></i>
                     <div class="main-post">
-                        <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+                        <p class="post-meta"><span class='post-author'>${author.username}</span> on ${post.date}</p>
                         <h2 class="post-title">${post.title}</h2>
                         <p class="post-content">${post.content}</p>
                     </div>
@@ -175,7 +175,7 @@ async function fetchPosts() {
                     postElement.innerHTML = `
                     <i class="fas fa-trash-alt trashcan-icon"></i>
                     <div class="main-post">
-                        <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+                        <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
                         <h2 class="post-title">${blocked_title}</h2>
                         <p class="post-content">${blocked_content}}</p>
                     </div>
@@ -284,8 +284,10 @@ async function fetchPost() {
     if (post.blocked == "True" || post.title == '') {
         postContent = `${blocked_content}`;
         postTitle = `${blocked_title}`;
-        postElement.className += ' blocked';
     }
+    postElement.className = postElement.className + (post.blocked  == "True" ? ' blocked' : '');
+    postElement.className = postElement.className + (post.misinformation  == "True" ? ' misinformation' : '');
+    
 
     const commentsHTML = await Promise.all(post.comments.map(async comment => {
         let commentContent = comment.content;
@@ -294,28 +296,20 @@ async function fetchPost() {
 
         if (comment.blocked == 'True' || comment.content == '') {
             commentContent = `${blocked_title}`;
-            return `
-                <li>
-                    <div class="comment blocked">
-                        <p class="comment-meta">By ${commentAuthor.username} on ${comment.date}</p>
-                        <p>${commentContent}</p>
-                    </div>
-                </li>`;
-        } else {
-            return `
-                <li>
-                    <div class="comment">
-                        <p class="comment-meta">By ${commentAuthor.username} on ${comment.date}</p>
-                        <p>${commentContent}</p>
-                    </div>
-                </li>`;
         }
+        return `
+        <li>
+            <div class="comment${(post.blocked  == "True" ? ' blocked' : '')}">
+                <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> on ${comment.date}</p>
+                <p>${commentContent}</p>
+            </div>
+        </li>`;
     }));
 
     postElement.innerHTML = `
         <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
-            <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+            <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
             <h2 class="post-title">${postTitle}</h2>
             <p class="post-content">${postContent}</p>
         </div>

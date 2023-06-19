@@ -2,8 +2,4 @@ flask
 pymongo
 datetime
 werkzeug
-fastapi
-peft
-transformers
-requests
-uvicorn[standard]
+openai

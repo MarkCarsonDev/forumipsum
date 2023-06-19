@@ -7,8 +7,9 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import requests
 import json
+import openai
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -27,6 +28,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app.json_encoder = CustomJSONEncoder
 
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -36,6 +38,8 @@ def login_required(f):
     return decorated_function
 
 # Database connection function
+
+
 def get_db():
     client = MongoClient(host='mongodb',
                          port=27017,
@@ -59,7 +63,7 @@ def register():
             return jsonify({"error": "Username already exists"}), 400
 
         user_id = users.insert_one({
-            "username": username, 
+            "username": username,
             "password": hashed_password,
             "admin": True if username == 'admin' else False
         }).inserted_id
@@ -109,14 +113,18 @@ def users_dump():
     users = list(db.users_tb.find())
     return Response(json_util.dumps({"users_dump": users}), mimetype='application/json')
 
+
 @app.route('/')
 def home():
     return redirect(url_for('display_feed'))
 
 # Route for displaying the feed
+
+
 @app.route('/feed')
 def display_feed():
     return render_template('feed.html')
+
 
 @app.route('/posts')
 def fetch_posts():
@@ -129,13 +137,13 @@ def fetch_posts():
 
     def can_see_post(post, user):
         if not user:
-            return not post['blocked'];
+            return not post['blocked']
         is_author = str(post['author']) == str(session['user_id'])
         return not post['blocked'] or is_author or user["admin"]
 
     def can_see_comment(comment, user):
         if not user:
-            return not comment['blocked'];
+            return not comment['blocked']
         is_author = str(comment['author']) == str(session['user_id'])
         return not comment['blocked'] or is_author or user["admin"]
 
@@ -152,11 +160,13 @@ def fetch_posts():
                     "content": comment['content'] if can_see_comment(comment, user) else '',
                     "author": str(comment['author']),
                     "date": comment['date'].strftime("%Y-%m-%d %H:%M:%S"),
-                    "blocked": str(comment['blocked'])
+                    "blocked": str(comment['blocked']),
+                    "misinformation": str(post['misinformation'])
                 }
                 for comment in post['comments']
             ],
-            "blocked": str(post['blocked'])
+            "blocked": str(post['blocked']),
+            "misinformation": str(post['misinformation'])
         }
         for post in _posts
     ]
@@ -233,8 +243,6 @@ def fetch_post(post_id):
         return jsonify({"error": "Post not found"}), 404
 
 
-
-
 # Route for creating a new post
 
 
@@ -258,14 +266,17 @@ def create_post():
         "author": ObjectId(session['user_id']),
         "date": datetime.utcnow(),
         "comments": [],
-        "blocked": False
+        "blocked": False,
+        "misinformation": False
     }
 
-
     # filtering
-    #print(post_thru_alpaca(post_data["content"]))
-    if ("badword" in new_post["title"].lower() or "badword" in new_post["content"].lower()):
+    # if ("badword" in new_post["title"].lower() or "badword" in new_post["content"].lower()):
+    if disallow_content_gpt(post_data["title"], post_data["content"]):
         new_post["blocked"] = True
+
+    if misinfo_gpt(post_data["title"], post_data["content"]):
+        new_post["misinformation"] = True
 
     db.posts_tb.insert_one(new_post)
     return jsonify({"message": "Post created successfully"}), 201
@@ -308,10 +319,13 @@ def create_comment(post_id):
     }
 
     # filtering
-    if ("badword" in new_comment["content"].lower()):
+    # if ("badword" in new_comment["content"].lower()):
+    if disallow_content_gpt('Reply', new_comment["content"]):
         new_comment["blocked"] = True
         # return jsonify({"message": "Failed content filter"}), 400
-    # call the model with the GPT sample text + banned content
+    
+    if misinfo_gpt('Reply', new_comment["content"]):
+        new_comment["misinformation"] = True
 
     # Find the parent post and append the new comment
     result = db.posts_tb.update_one(
@@ -325,6 +339,8 @@ def create_comment(post_id):
         return jsonify({"message": "Error creating comment"}), 500
 
 # Route for clearing all posts
+
+
 @app.route('/clear_posts', methods=['POST'])
 def clear_posts():
     db = get_db()
@@ -370,19 +386,70 @@ def session_info():
 # URL of the API endpoint
 url = "http://localhost:8100/classify"
 
-# What does Alpaca say about this?
-def post_thru_alpaca(data):
-    # Convert data into JSON format
-    json_data = json.dumps(data)
+def disallow_content_gpt(title, content):
 
-    # Send POST request to the API endpoint
-    response = requests.post(url, json=json_data)
+    try:
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+    except KeyError:
+        raise Exception("OPENAI_API_KEY not set in environment")
 
-    # TODO: Clean the response text if needed
-    #
-    
+    post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content: \nTitle: ${title}\nContent: ${content}"
+    system_prompt = f"You are a helpful moderator that has extensive experience moderating large community forums. You are extremely well versed in recognizing profane language, racist, homophobic and sexist behaviors as well as any potentially aggressive language or latent sentiment in a post that may be considered verbal bullying. You do not care if a post's content is true or not, only if it is offensive. The only responses you can give are 'Allow' or 'Disallow'. "
+    # system_prompt = f'You are a helpful moderator that has extensive experience moderating large community forums. You are extremely well versed in recognizing profane language, racist, homophobic and sexist behaviors as well as any potentially aggressive language or latent sentiment in a post that may be considered verbal bullying. You do not care if a post's content is true or not, only if it is offensive.'
+    # json_test = {
+    #     "spam": False,
+    #     "profanity": False,
+    #     "racism": False,
+    #     "sexism": False,
+    #     "homophobia": False,
+    #     "aggressive_language": False,
+    #     "compliance": True,
+    #     "passed": True
+    # }
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        # model="gpt-4",
+        max_tokens=4,
+        temperature=0,
+        messages=[{
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user", 
+                "content": post_prompt
+            }]
+    )
     # Return the response
-    return response.text
+    return 'disallow' in response['choices'][0]['message']['content'].lower().split()[0]
+
+def misinfo_gpt(title, content):
+
+    try:
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+    except KeyError:
+        raise Exception("OPENAI_API_KEY not set in environment")
+
+    post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content, responding 'allow' if beyond your training knowledge: \nTitle: ${title}\nContent: ${content}"
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        # model="gpt-4",
+        max_tokens=4,
+        temperature=0,
+        messages=[{
+                "role": "system",
+                "content": "You are a savvy AI moderator, skilled in dissecting online discussions. You excel at differentiating genuine facts from intentional disinformation. Your attention to detail allows you to spot misinformation tactics, such as manipulated context or fabricated sources. With a commitment to uphold truth and credibility, your main objective is to flag and hinder any disinformation attempts, fostering a trustworthy community."
+            },
+            {
+                "role": "user", 
+                "content": post_prompt
+            }]
+    )
+    # Return the response
+    return 'disallow' in response['choices'][0]['message']['content'].lower().split()[0]
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969, debug=True)

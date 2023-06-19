@@ -4,12 +4,22 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
-    # pip install -q datasets loralib sentencepiece && \
-    # pip uninstall -y transformers && \
-    # pip install -q git+https://github.com/zphang/transformers@c3dc391 && \
-    # pip install -q git+https://github.com/huggingface/peft.git && \
-    # pip install -q bitsandbytes
+RUN python3.10 -m pip install --upgrade pip && \
+    python3.10 -m pip install -r requirements.txt 
+    
+# FROM python:3.10
 
-# CMD ["uvicorn", "alpaca_api_waypoint:app", "--host", "0.0.0.0", "--port", "8100"]
+# WORKDIR /app
+
+# # Create and activate a virtual environment
+# RUN python3.10 -m venv /opt/venv
+# ENV PATH="/opt/venv/bin:$PATH"
+# RUN echo "source /opt/venv/bin/activate" >> ~/.bashrc
+
+# COPY . .
+
+# # Install dependencies inside the virtual environment
+# RUN pip install --upgrade pip && \
+#     pip install -r requirements.txt
+
+# CMD ["python", "-u", "app.py"]
