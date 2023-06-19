@@ -128,14 +128,16 @@ def fetch_posts():
         user = _users.find_one({"_id": ObjectId(session['user_id'])})
 
     def can_see_post(post, user):
-        is_author = 'user_id' in session and post['author'] == session['user_id']
-        is_admin = 'user_id' in session and user["admin"]
-        return not post['blocked'] or is_author or is_admin
+        if not user:
+            return not post['blocked'];
+        is_author = str(post['author']) == str(session['user_id'])
+        return not post['blocked'] or is_author or user["admin"]
 
     def can_see_comment(comment, user):
-        is_author = 'user_id' in session and comment['author'] == session['user_id']
-        is_admin = 'user_id' in session and user["admin"]
-        return not comment['blocked'] or is_author or is_admin
+        if not user:
+            return not comment['blocked'];
+        is_author = str(comment['author']) == str(session['user_id'])
+        return not comment['blocked'] or is_author or user["admin"]
 
     _posts = db.posts_tb.find().sort('date', pymongo.DESCENDING)
     posts = [
@@ -193,14 +195,16 @@ def fetch_post(post_id):
     post = db.posts_tb.find_one({"_id": post_object_id})
 
     def can_see_post(post, user):
-        is_author = 'user_id' in session and post['author'] == session['user_id']
-        is_admin = user is not None and user["admin"]
-        return not post['blocked'] or is_author or is_admin
+        if not user:
+            return not post['blocked']
+        is_author = str(post['author']) == str(session['user_id'])
+        return not post['blocked'] or is_author or user["admin"]
 
     def can_see_comment(comment, user):
-        is_author = 'user_id' in session and comment['author'] == session['user_id']
-        is_admin = user is not None and user["admin"]
-        return not comment['blocked'] or is_author or is_admin
+        if not user:
+            return not comment['blocked']
+        is_author = str(comment['author']) == str(session['user_id'])
+        return not comment['blocked'] or is_author or user["admin"]
 
     # Check if the post was found
     if post:
@@ -227,6 +231,7 @@ def fetch_post(post_id):
     else:
         # Return a 404 not found status if the post is not found
         return jsonify({"error": "Post not found"}), 404
+
 
 
 

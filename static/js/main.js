@@ -1,3 +1,6 @@
+const blocked_title = "[blocked]"
+const blocked_content = "Please contact an admin if you believe this post was blocked in error."
+
 // Register user
 async function registerUser() {
     const username = document.querySelector('#register-username').value;
@@ -157,8 +160,8 @@ async function fetchPosts() {
         data.posts.forEach(post => {
             getUserInfo(post.author).then(author => {
                 const postElement = document.createElement('div');
-                postElement.className = 'post frosted';
-                if (post.blocked == "False") {
+                postElement.className = 'post frosted' + (post.blocked  == "True" ? ' blocked' : '');
+                if (post.blocked == "False" || post.title != '') {
                     postElement.innerHTML = `
                     <i class="fas fa-trash-alt trashcan-icon"></i>
                     <div class="main-post">
@@ -169,13 +172,12 @@ async function fetchPosts() {
                     <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
                     `;
                 } else {
-                    postElement.className = postElement.className + ' blocked';
                     postElement.innerHTML = `
                     <i class="fas fa-trash-alt trashcan-icon"></i>
                     <div class="main-post">
                         <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
-                        <h2 class="post-title"><i>--- </i></h2>
-                        <p class="post-content"><i>This post's content is marked as blocked. If you believe this to be an error, contact the site admin.</i></p>
+                        <h2 class="post-title">${blocked_title}</h2>
+                        <p class="post-content">${blocked_content}}</p>
                     </div>
                     <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
                     `; 
@@ -202,7 +204,7 @@ async function fetchPosts() {
             clearTimeout(t);
             t = setTimeout(initMasonry, 400);
 
-            console.log("Instantiated post: " + post.title + " - " + post.blocked);
+            console.log("Instantiated post: " + post.title);
         });
 
         
@@ -255,10 +257,10 @@ async function fetchPosts() {
 }
 
 // Fetch and display a single post and its content
+// Fetch and display a single post and its content
 async function fetchPost() {
     const response = await fetch('/posts/' + window.location.pathname.split('/')[2]);
 
-    console.log(window.location.pathname.split('/')[2]);
     if (!response.ok) {
         // Handle the case when the post is not found
         if (response.status === 404) {
@@ -273,32 +275,58 @@ async function fetchPost() {
     const data = await response.json();
     const post = data.post;
     const postElement = document.getElementById('post');
+    let postContent = post.content;
+    let postTitle = post.title;
+    
+    // Fetch the author information
+    const author = await getUserInfo(post.author);
 
-    postElement.className = 'post';
+    if (post.blocked == "True" || post.title == '') {
+        postContent = `${blocked_content}`;
+        postTitle = `${blocked_title}`;
+        postElement.className += ' blocked';
+    }
+
+    const commentsHTML = await Promise.all(post.comments.map(async comment => {
+        let commentContent = comment.content;
+        // Fetch the comment author information
+        const commentAuthor = await getUserInfo(comment.author);
+
+        if (comment.blocked == 'True' || comment.content == '') {
+            commentContent = `${blocked_title}`;
+            return `
+                <li>
+                    <div class="comment blocked">
+                        <p class="comment-meta">By ${commentAuthor.username} on ${comment.date}</p>
+                        <p>${commentContent}</p>
+                    </div>
+                </li>`;
+        } else {
+            return `
+                <li>
+                    <div class="comment">
+                        <p class="comment-meta">By ${commentAuthor.username} on ${comment.date}</p>
+                        <p>${commentContent}</p>
+                    </div>
+                </li>`;
+        }
+    }));
+
     postElement.innerHTML = `
-
         <i class="fas fa-trash-alt trashcan-icon"></i>
-        <div class="main-post frosted">
-            <p class="post-meta">By ${post.author} on ${post.date}</p>
-            <h2 class="post-title">${post.title}</h2>
-            <p class="post-content">${post.content}</p>
+        <div class="main-post">
+            <p class="post-meta">By <a class="author-url" href='/u/${author.id}'>${author.username}</a> on ${post.date}</p>
+            <h2 class="post-title">${postTitle}</h2>
+            <p class="post-content">${postContent}</p>
         </div>
         <div class="comments-section">
             <div class="comments">
                 <ul>
-                    ${post.comments.map(comment => `
-                        <li>
-                            <div class="comment">
-                                <p class="comment-meta">By ${comment.author} on ${comment.date}</p>
-                                <p>${comment.content}</p>
-                            </div>
-                        </li>
-                    `).join('')}
+                    ${commentsHTML.join('')}
                 </ul>
             </div>
             <div>
                 <form class="comment-form" id="comment-form-${post._id}">
-                    <!--<input type="text" id="author-${post._id}" class="author-field" name="author" placeholder="Author" required>-->
                     <textarea rows="2" id="content-${post._id}" class="comment-field" name="content" placeholder="Leave a comment" required></textarea>
                     <br>
                     <div class="submission">
@@ -309,12 +337,15 @@ async function fetchPost() {
                 </form>
             </div>
         </div>
-        `;
+    `;
 
     const commentForm = postElement.querySelector(`#comment-form-${post._id}`);
     commentForm.dataset.postId = post._id;
     commentForm.addEventListener('submit', createComment);
 }
+
+
+
 
 // Create a new comment
 async function createComment(event) {
