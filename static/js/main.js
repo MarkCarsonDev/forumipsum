@@ -194,7 +194,7 @@ function generatePostHTML(post, author) {
     if (post.blocked === "False" || post.title !== '') {
         postHTML = getPostHTML(post, author);
     } else {
-        postHTML = getBlockedPostHTML();
+        postHTML = getBlockedPostHTML(post, author);
     }
     return postHTML;
 }
@@ -211,7 +211,7 @@ function getPostHTML(post, author) {
         `;
 }
 
-function getBlockedPostHTML() {
+function getBlockedPostHTML(post, author) {
     return `
         <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
@@ -408,7 +408,7 @@ async function createComment(event) {
     event.preventDefault();
 
     const form = event.target;
-    const postId = form.dataset.postId;
+    const postId = form.id.replace("comment-form-", "");
     const content = form.querySelector(`#content-${postId}`).value;
 
     const response = await fetch(`/posts/${postId}/comments`, {
@@ -426,6 +426,8 @@ async function createComment(event) {
         alert('Error creating comment: ' + response.status);
     }
 }
+
+
 
 
 // Delete a post
