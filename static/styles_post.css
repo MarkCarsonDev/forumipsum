@@ -502,3 +502,9 @@ form.comment-form button[type="submit"]:hover .comments-icon {
     /* backdrop-filter: blur(1em); */
     border: 1px solid rgba(255, 255, 255, 0.18);
 }
+
+.post-author {
+    background-color: rgba(0, 0, 0, 0.337);
+    border-radius: 0.3em;
+    padding: 0.3em 0.5em;
+}

@@ -154,12 +154,14 @@ def fetch_posts():
             "title": post['title'] if can_see_post(post, user) else '',
             "content": post['content'] if can_see_post(post, user) else '',
             "author": str(post['author']),
-            "date": post['date'].strftime("%Y-%m-%d %H:%M:%S"),
+            "date": format_date(post['date']),
+            "rawdate": post['date'].timestamp(),
             "comments": [
                 {
                     "content": comment['content'] if can_see_comment(comment, user) else '',
                     "author": str(comment['author']),
-                    "date": comment['date'].strftime("%Y-%m-%d %H:%M:%S"),
+                    "date": format_date(comment['date']),
+                    "rawdate": comment['date'].timestamp(),
                     "blocked": str(comment['blocked']),
                     "misinformation": str(post['misinformation'])
                 }
@@ -224,12 +226,14 @@ def fetch_post(post_id):
             "title": post['title'] if can_see_post(post, user) else '',
             "content": post['content'] if can_see_post(post, user) else '',
             "author": str(post["author"]),
-            "date": post["date"].strftime("%Y-%m-%d %H:%M:%S"),
+            "date": format_date(post['date']),
+            "rawdate": post['date'].timestamp(),
             "comments": [
                 {
                     "content": comment['content'] if can_see_comment(comment, user) else '',
                     "author": str(comment["author"]),
-                    "date": comment["date"].strftime("%Y-%m-%d %H:%M:%S"),
+                    "date": format_date(comment['date']),
+                    "rawdate": comment['date'].timestamp(),
                     "blocked": str(comment["blocked"])
                 }
                 for comment in post["comments"]
@@ -281,11 +285,10 @@ def create_post():
     db.posts_tb.insert_one(new_post)
     return jsonify({"message": "Post created successfully"}), 201
 
-
+@login_required
 @app.route('/posts/<post_id>', methods=['DELETE'])
 def delete_post(post_id):
     db = get_db()
-
     # Delete the post from the database using post_id
     result = db.posts_tb.delete_one({"_id": ObjectId(post_id)})
 
@@ -408,8 +411,8 @@ def disallow_content_gpt(title, content):
     # }
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        # model="gpt-4",
+        # model="gpt-3.5-turbo",
+        model="gpt-4",
         max_tokens=4,
         temperature=0,
         messages=[{
@@ -434,8 +437,8 @@ def misinfo_gpt(title, content):
     post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content, responding 'allow' if beyond your training knowledge: \nTitle: ${title}\nContent: ${content}"
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        # model="gpt-4",
+        # model="gpt-3.5-turbo",
+        model="gpt-4",
         max_tokens=4,
         temperature=0,
         messages=[{
@@ -449,6 +452,24 @@ def misinfo_gpt(title, content):
     )
     # Return the response
     return 'disallow' in response['choices'][0]['message']['content'].lower().split()[0]
+
+def format_date(date):
+    now = datetime.now()
+    diff = now - date
+
+    if diff < timedelta(minutes=1):
+        return 'Just now'
+    elif diff < timedelta(hours=1):
+        return f'{diff.seconds // 60} minutes ago'
+    elif diff < timedelta(days=1):
+        return f'Today at {date.strftime("%I:%M %p")}'
+    elif diff < timedelta(days=2):
+        return f'Yesterday at {date.strftime("%I:%M %p")}'
+    elif now.year == date.year:
+        return date.strftime("%d %B")
+    else:
+        return date.strftime("%d %B %Y")
+
 
 
 if __name__ == '__main__':

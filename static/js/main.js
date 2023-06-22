@@ -90,18 +90,19 @@ async function getSessionInfo(callback) {
 
 // Delete all posts
 async function clearPosts() {
-    if (!confirm('This will delete the entire posts table in the database permanently. \n\nPress "OK" to delete the table.')) {
-        return;
-    }
-    const response = await fetch('/clear_posts', {
-        method: 'POST'
-    });
+    if (confirm('This will delete the entire posts table in the database permanently. \n\nPress "OK" to delete the table.')) {
+        const response = await fetch('/clear_posts', {
+            method: 'POST'
+        });
 
-    if (response.ok) {
-        loadFeed(); // Reload the posts
-    } else {
-        alert('Error clearing posts');
+        if (response.ok) {
+            loadFeed(); // Reload the posts
+            console("posts cleared")
+        } else {
+            alert('Error clearing posts');
+        }
     }
+    return false;
 }
 
 async function dropPosts() {
@@ -138,7 +139,6 @@ async function loadFeed() {
     console.log("Loaded posts");
 }
 
-// Fetch and display all posts and post content
 async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
@@ -149,22 +149,22 @@ async function fetchPosts() {
     clearElement(postsElement);
     postsElement.append(createPostFooter());
 
-    data.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    data.posts.sort((a, b) => new Date(b.rawdate) - new Date(a.rawdate));
 
     const session = await getSessionInfo();
 
-    // Use Promise.all() to wait until all posts are fetched and added to the page
-    await Promise.all(data.posts.map(async (post) => {
+    for (let post of data.posts) {
         const author = await getUserInfo(post.author);
         const postElement = createPostElement(post, author);
         postsElement.append(postElement);
-    }));
+    }
 
     displayHeaderContent(session, headerElement);
 
     // initMasonry() is called after all posts are fetched and added to the page
     initMasonry();
 }
+
 
 
 function clearElement(element) {
@@ -190,12 +190,13 @@ function createPostElement(post, author) {
 }
 
 function generatePostHTML(post, author) {
-    let postHTML = '';
-    if (post.blocked === "False" || post.title !== '') {
-        postHTML = getPostHTML(post, author);
-    } else {
-        postHTML = getBlockedPostHTML(post, author);
+    if (post.title == '') {
+        post.title = blocked_title
+        post.content = blocked_content
     }
+
+    let postHTML = '';
+    postHTML = getPostHTML(post, author);
     return postHTML;
 }
 
@@ -203,21 +204,9 @@ function getPostHTML(post, author) {
     return `
         <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
-            <p class="post-meta"><span class='post-author'>${author.username}</span> on ${post.date}</p>
+            <p class="post-meta"><span class='post-author'>${author.username}</span> ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
-        </div>
-        <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
-        `;
-}
-
-function getBlockedPostHTML(post, author) {
-    return `
-        <i class="fas fa-trash-alt trashcan-icon"></i>
-        <div class="main-post">
-            <p class="post-meta"><span class="post-author">${author.username}</span> on ${post.date}</p>
-            <h2 class="post-title">${blocked_title}</h2>
-            <p class="post-content">${blocked_content}</p>
         </div>
         <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
         `;
@@ -316,16 +305,12 @@ function updatePostClassNames(post, postElement) {
     if (post.misinformation === "True") postElement.classList.add('misinformation');
 }
 
-// Create the post content HTML
+// Create the post content HTML (for the /p/:id route)
 function createPostContent(post, author) {
-    // Set the default post content and title
-    let postContent = post.content;
-    let postTitle = post.title;
-
-    // If the post is blocked or has no title, set the content and title to the blocked content and title
-    if (post.blocked === "True" || post.title === '') {
-        postContent = `${blocked_content}`;
-        postTitle = `${blocked_title}`;
+    // If the post has no title, set the content and title to the blocked content and title
+    if (post.title === '') {
+        post.content = `${blocked_content}`;
+        post.title = `${blocked_title}`;
     }
 
     // Create a new div element and set its inner HTML to the post content HTML
@@ -371,7 +356,7 @@ async function getCommentsHTML(post) {
         let commentContent = comment.content;
 
         // If the comment is blocked or has no content, set the content to the blocked title
-        if (comment.blocked === 'True' || comment.content === '') {
+        if (comment.content === '') {
             commentContent = `${blocked_title}`;
         }
 
@@ -379,7 +364,7 @@ async function getCommentsHTML(post) {
         return `
         <li>
             <div class="comment${(post.blocked === "True" ? ' blocked' : '')}">
-                <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> on ${comment.date}</p>
+                <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> ${comment.date}</p>
                 <p>${commentContent}</p>
             </div>
         </li>`;
