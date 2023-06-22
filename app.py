@@ -11,6 +11,30 @@ import json
 import openai
 import os
 
+import pandas as pd 
+import pickle
+import joblib
+import re
+import string
+from nltk.tokenize.treebank import TreebankWordDetokenizer
+import gensim
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras import layers
+from keras.optimizers import RMSprop,Adam
+from keras.preprocessing.text import Tokenizer
+from keras.utils import pad_sequences
+from keras import regularizers
+from keras import backend as K
+from keras.callbacks import ModelCheckpoint
+import pickle
+import warnings
+warnings.filterwarnings('ignore')
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+import pandas as pd
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
@@ -472,6 +496,124 @@ def format_date(date):
         return date.strftime("%d %B %Y")
 
 
+# Running Fake News Detection model
 
+load_model = keras.models.load_model("model.h5")
+print('Model loaded')
+dataframe = pd.read_csv('news.csv')
+
+dataframe = dataframe[["text","label"]]
+dataframe["text"].isnull().sum()
+dataframe["text"].fillna("No content", inplace = True)
+
+def depure_data(data):
+
+    #Removing URLs with a regular expression
+    url_pattern = re.compile(r'https?://\S+|www\.\S+')
+    data = url_pattern.sub(r'', data)
+
+    # Remove Emails
+    data = re.sub('\S*@\S*\s?', '', data)
+
+    # Remove new line characters
+    data = re.sub('\s+', ' ', data)
+
+    # Remove distracting single quotes
+    data = re.sub("\'", "", data)
+
+    return data
+
+temp = []
+#Splitting pd.Series to list
+data_to_list = dataframe['text'].values.tolist()
+for i in range(len(data_to_list)):
+    temp.append(depure_data(data_to_list[i]))
+
+def sent_to_words(sentences):
+    for sentence in sentences:
+        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
+
+data_words = list(sent_to_words(temp))
+
+def detokenize(text):
+    return TreebankWordDetokenizer().detokenize(text)
+
+data = []
+for i in range(len(data_words)):
+    data.append(detokenize(data_words[i]))
+
+data = np.array(data)
+
+labels = np.array(dataframe['label'])
+y = []
+for i in range(len(labels)):
+    if labels[i] == 'FAKE':
+        y.append(0)
+    if labels[i] == 'REAL':
+        y.append(1)
+y = np.array(y)
+labels = tf.keras.utils.to_categorical(y, 3, dtype="float32")
+del y
+
+
+#Data sequencing and spilting
+max_words = 5000
+max_len = 200
+
+tokenizer = Tokenizer(num_words=max_words)
+tokenizer.fit_on_texts(data)
+sequences = tokenizer.texts_to_sequences(data)
+news = pad_sequences(sequences, maxlen=max_len)
+print(news)
+
+X_train, X_test, y_train, y_test = train_test_split(news,labels, random_state=0)
+
+# #Model building (BidRNN)
+# model = Sequential()
+# model.add(layers.Embedding(max_words, 40, input_length=max_len))
+# model.add(layers.Bidirectional(layers.LSTM(20,dropout=0.6)))
+# model.add(layers.Dense(3,activation='softmax'))
+# model.compile(optimizer='rmsprop',loss='categorical_crossentropy', metrics=['accuracy'])
+# model.fit(X_train, y_train, epochs=70,validation_data=(X_test, y_test))
+# test_loss, test_acc = model.evaluate(X_test, y_test, verbose=2)
+# print(f'Test Loss: {test_loss:.4f}')
+# print(f'Test Accuracy: {test_acc:.4f}')
+
+# #Save whole model
+# model.save("model.h5")
+# load_model = keras.models.load_model("model.h5")
+# print('Model saved')
+
+
+sentiment = ['FAKE','REAL']
+
+def fake_news_det(title, content):
+
+    # Tokenize and preprocess the input news
+    input_data = [title, content]
+    sequence = tokenizer.texts_to_sequences(input_data)
+    test = pad_sequences(sequence, maxlen=max_len)
+    # Make predictions using the loaded model
+    prediction = sentiment[np.around(load_model.predict(test), decimals=0).argmax(axis=1)[0]]
+
+    return prediction
+
+@app.route('/predict',methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        message = request.form['message']
+        print('This is message:')
+        print(message)
+        pred = fake_news_det(message)
+        print('This is pred:')
+        print(pred)
+        return render_template('feed.html', prediction=pred)
+    else:
+        return render_template('feed.html', prediction="Something went wrong")
+
+@app.route('/test')
+def homeTest():
+	return render_template('index.html')
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969, debug=True)

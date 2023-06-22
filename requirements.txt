@@ -3,3 +3,9 @@ pymongo
 datetime
 werkzeug
 openai
+pandas
+numpy
+nltk
+tensorflow
+scikit-learn
+gensim
