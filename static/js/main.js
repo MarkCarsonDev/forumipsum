@@ -207,8 +207,8 @@ function getPostHTML(post, author) {
             <p class="post-meta"><span class='post-author'>${author.username}</span> ${post.date}</p>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
-        </div>
         <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
+        </div>
         `;
 }
 
@@ -364,7 +364,7 @@ async function getCommentsHTML(post) {
         // Return the comment HTML
         return `
         <li>
-            <div class="comment${(post.blocked === "True" ? ' blocked' : '')}">
+            <div class="comment${(comment.blocked === "True" ? ' blocked' : '')}${(comment.misinformation === "True" ? ' misinfo' : '')}">
                 <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> ${comment.date}</p>
                 <p>${commentContent}</p>
             </div>

@@ -318,16 +318,17 @@ def create_comment(post_id):
         "content": comment_data["content"],
         "author": ObjectId(session['user_id']),
         "date": datetime.utcnow(),
-        "blocked": False
+        "blocked": False,
+        "misinformation": False
     }
 
     # filtering
     # if ("badword" in new_comment["content"].lower()):
-    if disallow_content_gpt('Reply', new_comment["content"]):
+    if disallow_content_gpt('(no title)', new_comment["content"]):
         new_comment["blocked"] = True
         # return jsonify({"message": "Failed content filter"}), 400
     
-    if misinfo_gpt('Reply', new_comment["content"]):
+    if misinfo_gpt('(no title)', new_comment["content"]):
         new_comment["misinformation"] = True
 
     # Find the parent post and append the new comment
