@@ -279,6 +279,7 @@ async function fetchPost() {
     updatePostClassNames(post, postElement);
 
     // Append the post content and comments section to the post element
+    postElement.innerHTML = '';
     postElement.append(createPostContent(post, author));
     postElement.append(await createCommentsSection(post));
 }
