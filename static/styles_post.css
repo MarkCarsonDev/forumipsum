@@ -70,7 +70,7 @@ body {
 /* */
 #page-content {
     position: fixed;
-    width: 98vw;
+    width: 98%;
     height: 96vh;
     top: 0;
     margin: 0 1vw 4vh 1vw;
@@ -98,8 +98,8 @@ body {
     height: 100%;
     border-radius: inherit;
     box-shadow: 0 0vw 1vw 0.5vw var(--shadow-color);
-    overflow: scroll;
-    scrollbar-width: none;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* Nav section */
@@ -319,6 +319,7 @@ body {
     padding: 1em 1em 1em 1em;
     scrollbar-width: none;
     margin: 0;
+    background-image: linear-gradient(rgba(33, 33, 33, 0.8), rgba(19, 19, 19, 0.8));
 }
 
     .trashcan-icon {
@@ -362,7 +363,7 @@ body {
 
 .post-content {
     position: relative;
-    overflow: scroll;
+    overflow-y: scroll;
     font-weight: 400;
     color: var(--white-subtext-color);
 }

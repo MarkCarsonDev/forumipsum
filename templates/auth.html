@@ -6,36 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register and Login</title>
     <link rel="stylesheet" href="/static/styles_auth.css">
+    <script src="https://kit.fontawesome.com/2d389f24b8.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <div class="container" style="display: flex; flex-direction: row;">
-        <h1>Register and Login</h1>
-        <div class="register">
-            <h2>Register</h2>
-            <form id="register-form">
-                <label for="register-username">Username:</label>
-                <input type="text" id="register-username" required>
-                <br>
-                <label for="register-password">Password:</label>
-                <input type="password" id="register-password" required>
-                <br>
-                <button type="submit">Register</button>
-            </form>
+    <div id="nav">
+        <div id="nav-left">
+            <a href="/feed">FORUM IPSUM</a>
+            <a href="/feed">Go to Feed</a>
         </div>
-        <div class="login">
-            <h2>Login</h2>
-            <form id="login-form">
-                <label for="login-username">Username:</label>
-                <input type="text" id="login-username" required>
-                <br>
-                <label for="login-password">Password:</label>
-                <input type="password" id="login-password" required>
-                <br>
-                <button type="submit">Login</button>
-            </form>
+        <div id="nav-right">
+            <a id="login-button" class="hidden" href="/login">Login/Register</a>
+            <a id="logout-button" class="hidden">Logout</a>
         </div>
-        <button id="logout-button" style="display:none;">Logout</button>
+    </div>
+    <h1 class="auth-title">Register and Login</h1>
+    <div id="auth-wrapper">
+        <div id="auth-container">
+            <div class="auth-section">
+                <h2 class="auth-subtitle">Register</h2>
+                <form id="register-form" class="auth-form">
+                    <label for="register-username" class="auth-label">Username:</label>
+                    <input type="text" id="register-username" class="auth-input" required>
+                    <label for="register-password" class="auth-label">Password:</label>
+                    <input type="password" id="register-password" class="auth-input" required>
+                    <button type="submit" class="auth-button">Register</button>
+                </form>
+            </div>
+        </div>
+        <div id="auth-container">
+            <div class="auth-section">
+                <h2 class="auth-subtitle">Login</h2>
+                <form id="login-form" class="auth-form">
+                    <label for="login-username" class="auth-label">Username:</label>
+                    <input type="text" id="login-username" class="auth-input" required>
+                    <label for="login-password" class="auth-label">Password:</label>
+                    <input type="password" id="login-password" class="auth-input" required>
+                    <button type="submit" class="auth-button">Login</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

@@ -74,7 +74,7 @@ body {
 /* */
 #page-content {
     position: fixed;
-    width: 98vw;
+    width: 98%;
     height: 96vh;
     top: 0;
     margin: 0 1vw 4vh 1vw;
@@ -86,12 +86,6 @@ body {
 #forum {
     position: absolute;
     display: grid;
-    /* grid-template-areas:
-        'nav nav nav nav'
-        'menu header profile-info profile-pic'
-        'menu subheader search search'
-        'menu posts posts posts';
-    grid-template-columns: 15% 55% 20% 10%; */
     grid-template-areas:
     'nav nav nav'
     'header profile-info profile-pic'
@@ -104,8 +98,8 @@ body {
     height: 100%;
     border-radius: inherit;
     box-shadow: 0 0vw 1vw 0.5vw var(--shadow-color);
-    overflow: scroll;
-    scrollbar-width: none;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* Nav section */
@@ -156,24 +150,6 @@ body {
 
 #nav a:hover {
     background-color: var(--nav-anchor-highlight-color);
-}
-
-/* Left menu */
-#menu {
-    grid-area: menu;
-}
-
-#rules::after {
-    height: 20%;
-    background-color: var(--nav-bar-color);
-    width: 100%;
-    position: absolute;
-    top: -20%;
-    z-index: -2;
-    border-right: 1px solid rgba(255, 255, 255, 0.18);
-    content: "Hello there!";
-    color: white;
-
 }
 
 /* Content */
@@ -478,34 +454,6 @@ form.comment-form button[type="submit"]:hover .plus-icon {
 
     100% {
         background-position: 100%;
-    }
-}
-
-@keyframes bob-rotate {
-    0% {
-        transform: translateY(0) rotate(55deg);
-    }
-
-    50% {
-        transform: translateY(-3vh) rotate(65deg);
-    }
-
-    100% {
-        transform: translateY(0) rotate(55deg);
-    }
-}
-
-@keyframes bob {
-    0% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-1vh);
-    }
-
-    100% {
-        transform: translateY(0);
     }
 }
 
