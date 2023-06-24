@@ -192,6 +192,7 @@ def fetch_posts():
                 for comment in post['comments']
             ],
             "blocked": str(post['blocked']),
+            "label": str(post['label']) if can_see_post(post, user) else '',
             "misinformation": str(post['misinformation'])
         }
         for post in _posts
@@ -262,6 +263,7 @@ def fetch_post(post_id):
                 }
                 for comment in post["comments"]
             ],
+            "label": str(post['label']) if can_see_post(post, user) else '',
             "blocked": str(post["blocked"])
         }
         # Return the JSON response
@@ -288,6 +290,11 @@ def create_post():
 
     post_data = request.get_json()
 
+    # Perform sentiment prediction
+    title = post_data["title"]
+    content = post_data["content"]
+    sentiment_prediction = fake_news_det(title, content)
+
     new_post = {
         "title": post_data["title"],
         "content": post_data["content"],
@@ -295,6 +302,7 @@ def create_post():
         "date": datetime.utcnow(),
         "comments": [],
         "blocked": False,
+        "label": sentiment_prediction,
         "misinformation": False
     }
 
@@ -601,19 +609,14 @@ def fake_news_det(title, content):
 @app.route('/predict',methods=['POST'])
 def predict():
     if request.method == 'POST':
-        message = request.form['message']
-        print('This is message:')
-        print(message)
-        pred = fake_news_det(message)
+        title = request.form.get['title']
+        content = request.form.get['content']
+        pred = fake_news_det(title, content)
         print('This is pred:')
         print(pred)
         return render_template('feed.html', prediction=pred)
     else:
         return render_template('feed.html', prediction="Something went wrong")
-
-@app.route('/test')
-def homeTest():
-	return render_template('index.html')
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969, debug=True)

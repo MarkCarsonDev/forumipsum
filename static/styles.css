@@ -329,6 +329,12 @@ body {
     color: var(--white-subtext-color);
 }
 
+.post-label {
+    font-weight: bold;
+    text-transform: uppercase;
+    color: gold
+}
+
 .post-meta, .author-url {
     font-size: 0.8em;
     color: var(--meta-text-color);

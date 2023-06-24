@@ -201,16 +201,28 @@ function generatePostHTML(post, author) {
 }
 
 function getPostHTML(post, author) {
+    // Get the initial label value
+    let label = post.label; //['FAKE','REAL']
+
+
+    // If the post is not blocked and the model has detected misinformation, update the label to "Misinformation"
+    if (!post.blocked && post.misinformation) {
+        label = "Misinformation";
+    }
+
+    // Create the post HTML with the updated label
     return `
         <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
             <p class="post-meta"><span class='post-author'>${author.username}</span> ${post.date}</p>
+            <p class="post-label">${label}</p> 
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
         <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
         </div>
         `;
 }
+
 
 function redirectOnClick(event, post) {
     if (!event.target.matches('.trashcan-icon, form, form *') && !event.target.closest('.comments-section')) {
