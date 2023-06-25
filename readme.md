@@ -92,7 +92,7 @@ SOFTWARE.
 
 ## Acknowledgements
 
-We would like to express our gratitude to the instructors Dr. Zukunf and Jacob Anderson of the Big Data and Machine Learning elective course at HAW Hamburg for their guidance and support.
+We would like to express our gratitude to the instructors Professor Dr. Olaf Zukunf and Jakob Andersen of the Big Data and Machine Learning elective course at HAW Hamburg for their guidance and support.
 
 ## Contact
 
