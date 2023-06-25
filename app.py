@@ -187,7 +187,7 @@ def fetch_posts():
                     "date": format_date(comment['date']),
                     "rawdate": comment['date'].timestamp(),
                     "blocked": str(comment['blocked']),
-                    "misinformation": str(post['misinformation'])
+                    "misinformation": str(comment['misinformation'])
                 }
                 for comment in post['comments']
             ],
@@ -259,12 +259,15 @@ def fetch_post(post_id):
                     "author": str(comment["author"]),
                     "date": format_date(comment['date']),
                     "rawdate": comment['date'].timestamp(),
-                    "blocked": str(comment["blocked"])
+                    "blocked": str(comment["blocked"]),
+                    "misinformation": str(comment['misinformation'])
                 }
                 for comment in post["comments"]
             ],
             "label": str(post['label']) if can_see_post(post, user) else '',
-            "blocked": str(post["blocked"])
+            "blocked": str(post["blocked"]),
+            "misinformation": str(post['misinformation'])
+
         }
         # Return the JSON response
         return jsonify({"post": formatted_post})
@@ -360,7 +363,7 @@ def create_comment(post_id):
         new_comment["blocked"] = True
         # return jsonify({"message": "Failed content filter"}), 400
     
-    if misinfo_gpt('(no title)', new_comment["content"]):
+    if misinfo_gpt('Reply', new_comment["content"]):
         new_comment["misinformation"] = True
 
     # Find the parent post and append the new comment
@@ -429,6 +432,7 @@ def disallow_content_gpt(title, content):
     except KeyError:
         raise Exception("OPENAI_API_KEY not set in environment")
 
+
     post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content: \nTitle: ${title}\nContent: ${content}"
     system_prompt = f"You are a helpful moderator that has extensive experience moderating large community forums. You are extremely well versed in recognizing profane language, racist, homophobic and sexist behaviors as well as any potentially aggressive language or latent sentiment in a post that may be considered verbal bullying. You do not care if a post's content is true or not, only if it is offensive. The only responses you can give are 'Allow' or 'Disallow'. "
     # system_prompt = f'You are a helpful moderator that has extensive experience moderating large community forums. You are extremely well versed in recognizing profane language, racist, homophobic and sexist behaviors as well as any potentially aggressive language or latent sentiment in a post that may be considered verbal bullying. You do not care if a post's content is true or not, only if it is offensive.'
@@ -467,7 +471,7 @@ def misinfo_gpt(title, content):
     except KeyError:
         raise Exception("OPENAI_API_KEY not set in environment")
 
-    post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content, responding 'allow' if beyond your training knowledge: \nTitle: ${title}\nContent: ${content}"
+    post_prompt = f"Please respond with 'allow' or 'disallow' concerning this forum post's content, responding 'allow' if the subject is beyond your training knowledge: \nTitle: ${title}\nContent: ${content}"
 
     response = openai.ChatCompletion.create(
         # model="gpt-3.5-turbo",
@@ -476,7 +480,7 @@ def misinfo_gpt(title, content):
         temperature=0,
         messages=[{
                 "role": "system",
-                "content": "You are a savvy AI moderator, skilled in dissecting online discussions. You excel at differentiating genuine facts from intentional disinformation. Your attention to detail allows you to spot misinformation tactics, such as manipulated context or fabricated sources. With a commitment to uphold truth and credibility, your main objective is to flag and hinder any disinformation attempts, fostering a trustworthy community."
+                "content": "You are a helpful forum moderator. You excel at differentiating genuine facts or simple mistakes from intentional disinformation. Your attention to detail allows you to spot misinformation tactics, such as manipulated context or fabricated sources. With a commitment to uphold truth and credibility, your main objective is to flag any posts as disallowed if they contain political, historical, or scientific misinformation, and allow them otherwise."
             },
             {
                 "role": "user", 

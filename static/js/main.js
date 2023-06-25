@@ -97,7 +97,7 @@ async function clearPosts() {
 
         if (response.ok) {
             loadFeed(); // Reload the posts
-            console("posts cleared")
+            console.log("Posts table dropped.")
         } else {
             alert('Error clearing posts');
         }
@@ -203,10 +203,15 @@ function generatePostHTML(post, author) {
 function getPostHTML(post, author) {
     // Get the initial label value
     let label = post.label; //['FAKE','REAL']
+    if (post.label == 'FAKE') {
+        label = '*'
+    } else {
+        label = ''
+    }
 
 
     // If the post is not blocked and the model has detected misinformation, update the label to "Misinformation"
-    if (!post.blocked && post.misinformation) {
+    if (post.blocked != "True" && post.misinformation == "True") {
         label = "Misinformation";
     }
 
@@ -214,8 +219,7 @@ function getPostHTML(post, author) {
     return `
         <i class="fas fa-trash-alt trashcan-icon"></i>
         <div class="main-post">
-            <p class="post-meta"><span class='post-author'>${author.username}</span> ${post.date}</p>
-            <p class="post-label">${label}</p> 
+            <div class="post-meta"><span class='post-author'>${author.username}</span> ${post.date} <span class="post-label">${label}</span> </div>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-content">${post.content}</p>
         <i class="fas fa-comment-alt comments-icon"> ${(post.comments && post.comments.length) || 0}</i>
@@ -377,7 +381,7 @@ async function getCommentsHTML(post) {
         return `
         <li>
             <div class="comment${(comment.blocked === "True" ? ' blocked' : '')}${(comment.misinformation === "True" ? ' misinfo' : '')}">
-                <p class="comment-meta"><span class="post-author">${commentAuthor.username}</span> ${comment.date}</p>
+                <div class="comment-meta"><span class="post-author">${commentAuthor.username}</span> ${comment.date} <span class="post-label">${comment.misinformation === "True" ? 'Misinformation' : ''}</span></div>
                 <p>${commentContent}</p>
             </div>
         </li>`;
