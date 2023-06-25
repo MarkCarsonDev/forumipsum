@@ -134,10 +134,14 @@ body {
     justify-content: space-around;
 }
 
+#navleft, #navright {
+    height: auto;
+}
+
 #nav a {
     height: 100%;
     letter-spacing: 0.2em;
-    padding: calc(10%) 2em;
+    padding: calc(10% - 1em) 2em;
     text-decoration: none;
     cursor: pointer;
     color: var(--white-text-color);

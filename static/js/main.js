@@ -143,23 +143,24 @@ async function fetchPosts() {
     const response = await fetch('/posts');
     const data = await response.json();
 
+    const session = await getSessionInfo();
+
     const postsElement = document.getElementById('posts');
     const headerElement = document.getElementById('header');
+    displayHeaderContent(session, headerElement);
 
     clearElement(postsElement);
     postsElement.append(createPostFooter());
 
     data.posts.sort((a, b) => new Date(b.rawdate) - new Date(a.rawdate));
 
-    const session = await getSessionInfo();
+
 
     for (let post of data.posts) {
         const author = await getUserInfo(post.author);
         const postElement = createPostElement(post, author);
         postsElement.append(postElement);
     }
-
-    displayHeaderContent(session, headerElement);
 
     // initMasonry() is called after all posts are fetched and added to the page
     initMasonry();
@@ -298,6 +299,19 @@ async function fetchPost() {
     postElement.innerHTML = '';
     postElement.append(createPostContent(post, author));
     postElement.append(await createCommentsSection(post));
+    commentForm = document.getElementsByClassName('comment-form')[0];
+    commentForm.innerHTML = '';
+
+    const session = await getSessionInfo();
+
+    if (session.username) {
+        commentForm.innerHTML = generateCommentFormHTML(post);
+        document.getElementById('logout-button').classList.remove('hidden');
+        document.getElementById('logout-button').addEventListener('click', logoutUser);
+    } else {
+        commentForm.innerHTML = '';
+        document.getElementById('login-button').classList.remove('hidden');
+    }
 }
 
 // Handles the case when the fetch response is not OK
