@@ -133,7 +133,7 @@ body {
 #nav a {
     height: 100%;
     letter-spacing: 0.2em;
-    padding: calc(10% + 1em) 2em;
+    padding: 2em 2em;
     text-decoration: none;
     cursor: pointer;
     color: var(--white-text-color);

@@ -141,7 +141,7 @@ body {
 #nav a {
     height: 100%;
     letter-spacing: 0.2em;
-    padding: calc(10% - 1em) 2em;
+    padding: 2em 2em;
     text-decoration: none;
     cursor: pointer;
     color: var(--white-text-color);
@@ -301,6 +301,11 @@ body {
 
 .comment-field {
     float: bottom;
+    background-image: linear-gradient(135deg, var(--frosted-bg-color), rgba(255, 255, 255, 0));
+    box-shadow: 0 3px 20px var(--shadow-color);
+    /* backdrop-filter: blur(1em); */
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    resize: vertical;
 }
 
 .author-field {
@@ -344,11 +349,15 @@ body {
 
 .comment {
     background-color: var(--input-bg-color);
-    border-radius: 0.1em 1.5em 1.5em 1.5em;
+    border-radius: 0.5em 0.5em 1.5em 1.5em;
     padding: 0.5em;
     width: 100%;
     margin-bottom: 5px;
-    color: var(--white-subtext-color)
+    color: var(--white-subtext-color);
+    background-image: linear-gradient(135deg, var(--frosted-bg-color), rgba(255, 255, 255, 0));
+    box-shadow: 0 3px 20px var(--shadow-color);
+    /* backdrop-filter: blur(1em); */
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .comment-meta {
@@ -367,6 +376,7 @@ form#new-post-form {
 
 form.comment-form {
     width: auto;
+    
 }
 
 form#new-post-form input[type="text"],

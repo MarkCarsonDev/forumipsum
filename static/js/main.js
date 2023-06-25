@@ -141,8 +141,6 @@ async function loadFeed() {
 
 async function fetchPosts() {
     const response = await fetch('/posts');
-    const data = await response.json();
-
     const session = await getSessionInfo();
 
     const postsElement = document.getElementById('posts');
@@ -151,6 +149,9 @@ async function fetchPosts() {
 
     clearElement(postsElement);
     postsElement.append(createPostFooter());
+
+
+    const data = await response.json();
 
     data.posts.sort((a, b) => new Date(b.rawdate) - new Date(a.rawdate));
 
