@@ -3,7 +3,7 @@ services:
     build: .
     command: python -u app.py
     ports:
-      - "6969:6969"
+      - "5000:5000"
     volumes:
       - .:/app
     links:
