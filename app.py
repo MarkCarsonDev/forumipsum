@@ -346,6 +346,7 @@ def create_comment(post_id):
     user = users.find_one({"_id": ObjectId(session['user_id'])})
     if not user:
         return jsonify({"error": "User not found"}), 404
+    post = db.posts_tb.find_one({"_id": ObjectId(post_id)})
 
     comment_data = request.get_json()
 
@@ -359,11 +360,11 @@ def create_comment(post_id):
 
     # filtering
     # if ("badword" in new_comment["content"].lower()):
-    if disallow_content_gpt('(no title)', new_comment["content"]):
+    if disallow_content_gpt(f'Reply to a post named "${post["title"]}"', new_comment["content"]):
         new_comment["blocked"] = True
         # return jsonify({"message": "Failed content filter"}), 400
     
-    if misinfo_gpt('Reply', new_comment["content"]):
+    if misinfo_gpt(f'Reply to a post named "${post["title"]}"', new_comment["content"]):
         new_comment["misinformation"] = True
 
     # Find the parent post and append the new comment
