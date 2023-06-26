@@ -19,7 +19,7 @@ Please note, as of this writing, the forum is still under development, and some 
 - Backend: Python Flask
 - Frontend: JavaScript, HTML/CSS
 - Database: MongoDB
-- AI Moderation: OpenAI's GPT-3.5 and GPT-4 model, a DNN trained on false news
+- AI Moderation: OpenAI's GPT-3.5 and GPT-4 model and a DNN (RNN and LSTM) Architecture trained on detecting real and fake news
 
 ## Getting Started
 
