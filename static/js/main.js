@@ -1,6 +1,3 @@
-const blocked_title = "[blocked]"
-const blocked_content = "Please contact an admin if you believe this post was blocked in error."
-
 // Register user
 async function registerUser() {
     const username = document.querySelector('#register-username').value;
@@ -190,6 +187,9 @@ function createPostElement(post, author) {
     trashcanIcon.addEventListener('click', deletePost);
     return postElement;
 }
+
+const blocked_title = "[blocked]"
+const blocked_content = "Please contact an admin if you believe this post was blocked in error."
 
 function generatePostHTML(post, author) {
     if (post.title == '') {

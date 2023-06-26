@@ -481,7 +481,7 @@ def misinfo_gpt(title, content):
         temperature=0,
         messages=[{
                 "role": "system",
-                "content": "You are a helpful forum moderator. You excel at differentiating genuine facts or simple mistakes from intentional disinformation. Your attention to detail allows you to spot misinformation tactics, such as manipulated context or fabricated sources. With a commitment to uphold truth and credibility, your main objective is to flag any posts as disallowed if they contain political, historical, or scientific misinformation, and allow them otherwise."
+                "content": "You are a helpful forum moderator. You excel at differentiating genuine facts or simple mistakes from intentional disinformation. Your attention to detail allows you to spot misinformation tactics, such as manipulated context or fabricated sources. With a commitment to uphold truth and credibility, your main objective is to flag any posts as disallowed if they contain political, historical, or scientific misinformation, and allow them otherwise. The only responses you can give are 'Allow' or 'Disallow'."
             },
             {
                 "role": "user", 
