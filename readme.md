@@ -1,6 +1,6 @@
 # ForumIpsum
 
-ForumIpsum is a web forum application designed and developed as part of the Big Data and Machine Learning elective course by a group of 4 students studying Angewante Informatik at HAW Hamburg. The forum is unique in its use of OpenAI's GPT model for offensive speech detection and intentional misinformation detection, providing a safer and more reliable online community experience.
+ForumIpsum is a web forum application designed and developed as part of the Big Data and Machine Learning elective course by a group of 4 students studying Applied Data Science at HAW Hamburg. The forum is unique in its use of OpenAI's GPT model for offensive speech detection and intentional misinformation detection, providing a safer and more reliable online community experience.
 
 ## Features
 
